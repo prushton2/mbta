@@ -21,81 +21,81 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	/*querystring, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		http.Error(w, "Error reading querystring (is there a querystring?)", http.StatusBadRequest)
-		io.WriteString(w, "{}")
-		return
-	}
-
-	// i cant name this time
-	timeWindow, err := strconv.ParseInt(querystring.Get("time"), 10, 32)
-	if err != nil {
-		http.Error(w, "Please supply a valid 32 bit integer to the query parameter time", http.StatusBadRequest)
-		io.WriteString(w, "{}")
-		return
-	}
-
-	// Clamp time to be within 0 - 24 hours
-	if timeWindow < 0 {
-		timeWindow = 0
-	} else if timeWindow > 86400 {
-		timeWindow = 86400
-	}
-
-	var response Response = Response{
-		Size:     0,
-		Elements: make([]StoredData, 0),
-	}
-
-	files, err := os.ReadDir("./data")
-	if err != nil {
-		fmt.Println("Error reading ./data directory:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	for _, file := range files {
-
-		dateCreated, err := strconv.ParseInt(strings.Split(file.Name(), ".")[0], 10, 64)
 		if err != nil {
-			fmt.Println("Error parsing file name ", file.Name(), " to int64, continuing. :", err)
+			http.Error(w, "Error reading querystring (is there a querystring?)", http.StatusBadRequest)
+			io.WriteString(w, "{}")
+			return
+		}
+	+
+		// i cant name this time
+		timeWindow, err := strconv.ParseInt(querystring.Get("time"), 10, 32)
+		if err != nil {
+			http.Error(w, "Please supply a valid 32 bit integer to the query parameter time", http.StatusBadRequest)
+			io.WriteString(w, "{}")
+			return
+		}
+
+		// Clamp time to be within 0 - 24 hours
+		if timeWindow < 0 {
+			timeWindow = 0
+		} else if timeWindow > 86400 {
+			timeWindow = 86400
+		}
+
+		var response Response = Response{
+			Size:     0,
+			Elements: make([]StoredData, 0),
+		}
+
+		files, err := os.ReadDir("./data")
+		if err != nil {
+			fmt.Println("Error reading ./data directory:", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			continue
+			return
 		}
 
-		if time.Now().Unix()-dateCreated > timeWindow {
-			continue
-		}
+		for _, file := range files {
 
-		readFile, err := os.OpenFile(fmt.Sprintf("./data/%s", file.Name()), os.O_RDONLY, 0644) //0644 is the file perms
-		if err != nil {
-			fmt.Println("Error opening file:", err)
-			continue
-		}
+			dateCreated, err := strconv.ParseInt(strings.Split(file.Name(), ".")[0], 10, 64)
+			if err != nil {
+				fmt.Println("Error parsing file name ", file.Name(), " to int64, continuing. :", err)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				continue
+			}
 
-		body, err := io.ReadAll(readFile)
-		if err != nil {
-			fmt.Println("Error reading file:", err)
+			if time.Now().Unix()-dateCreated > timeWindow {
+				continue
+			}
+
+			readFile, err := os.OpenFile(fmt.Sprintf("./data/%s", file.Name()), os.O_RDONLY, 0644) //0644 is the file perms
+			if err != nil {
+				fmt.Println("Error opening file:", err)
+				continue
+			}
+
+			body, err := io.ReadAll(readFile)
+			if err != nil {
+				fmt.Println("Error reading file:", err)
+				readFile.Close()
+				continue
+			}
+
 			readFile.Close()
-			continue
+
+			var fileData StoredData
+
+			err = json.Unmarshal(body, &fileData)
+
+			response.Size += 1
+			response.Elements = append(response.Elements, fileData)
 		}
 
-		readFile.Close()
-
-		var fileData StoredData
-
-		err = json.Unmarshal(body, &fileData)
-
-		response.Size += 1
-		response.Elements = append(response.Elements, fileData)
-	}
-
-	responseString, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Println("Error marshaling response to http request: ", err)
-		return
-	}*/
+		responseString, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			fmt.Println("Error marshaling response to http request: ", err)
+			return
+		}*/
 
 	io.WriteString(w, "responseString")
 }
@@ -157,7 +157,7 @@ func getTrainUpdates() {
 				if err != nil {
 					fmt.Println(err)
 				}
-				deleteOldStates(now)
+				deleteOldStates(now, 86400)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -259,7 +259,7 @@ func saveStateToFile(now int64, snapshot Snapshot) error {
 	return nil
 }
 
-func deleteOldStates(now int64) error {
+func deleteOldStates(now int64, deleteOlderThan int64) error {
 	files, err := os.ReadDir("./data")
 	if err != nil {
 		return fmt.Errorf("Error reading ./data directory: %s", err)
@@ -273,7 +273,7 @@ func deleteOldStates(now int64) error {
 			continue
 		}
 
-		if dateCreated >= now-86400 {
+		if dateCreated >= now-deleteOlderThan {
 			continue
 		}
 
