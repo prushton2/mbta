@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+var snapshotMutex sync.RWMutex
+var snapshot Snapshot = Snapshot{}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Request-Method", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
-	querystring, err := url.ParseQuery(r.URL.RawQuery)
+	/*querystring, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		http.Error(w, "Error reading querystring (is there a querystring?)", http.StatusBadRequest)
 		io.WriteString(w, "{}")
@@ -92,9 +95,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		fmt.Println("Error marshaling response to http request: ", err)
 		return
-	}
+	}*/
 
-	io.Writer.Write(w, responseString)
+	io.WriteString(w, "responseString")
 }
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
@@ -138,46 +141,51 @@ func getTrainUpdates() {
 	for {
 		time.Sleep(1 * time.Second)
 		now := time.Now().Unix()
-		if now%60 == 0 {
-			getCurrentState(now)
-			deleteOldStates(now)
+		if now%10 == 0 {
+			snapshotMutex.Lock()
+
+			snap, err := getCurrentState()
+			if err != nil {
+				fmt.Printf("%s", err)
+				snapshot = Snapshot{}
+			} else {
+				snapshot = snap
+			}
+
+			if now%60 == 0 {
+				err = saveStateToFile(now, snapshot)
+				if err != nil {
+					fmt.Println(err)
+				}
+				deleteOldStates(now)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+
+			snapshotMutex.Unlock()
 		}
 	}
 }
 
-func getCurrentState(now int64) {
+func getCurrentState() (Snapshot, error) {
 	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip")
 	if err != nil {
-		fmt.Println("Error making GET request:", err)
-		return
+		return Snapshot{}, fmt.Errorf("Error making GET request: %s", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
+		return Snapshot{}, fmt.Errorf("Error reading response body: %s", err)
 	}
 
 	var response APIResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		// this only really happens when there are no trains, so we store the lack of trains.
-		fmt.Println("Error unmarshaling body, writing empty array to file instead\n\nerr: ", err, "\n\nbody: ", body)
-
-		file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", now), os.O_WRONLY|os.O_CREATE, 0644) //0644 is the file perms
-		if err != nil {
-			fmt.Println("Error creating or opening file:", err)
-			return
-		}
-
-		n, err := file.Write([]byte("[]"))
-		if err != nil {
-			fmt.Println("Error writing ", len([]byte("[]")), " to file, ", n, " bytes written: ", err)
-			return
-		}
-
-		return
+		return Snapshot{
+			Train: make([]Train, 0),
+		}, nil
 	}
 
 	// store it in a map so it can be O(1) indexed when iterating over vehicles
@@ -229,29 +237,32 @@ func getCurrentState(now int64) {
 	}
 
 	// each file is one "moment" of train data
-	file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", now), os.O_WRONLY|os.O_CREATE, 0644) //0644 is the file perms
+	return snapshot, nil
+}
+
+func saveStateToFile(now int64, snapshot Snapshot) error {
+	file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", now), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		fmt.Println("Error creating or opening file:", err)
-		return
+		return fmt.Errorf("Error opening file ./data/%d.json: %s", now, err)
 	}
 
 	bytes, err := json.Marshal(snapshot)
 	if err != nil {
-		fmt.Println("Error marshalling storedData.Data: ", err)
-		return
+		return fmt.Errorf("Error marshalling storedData.Data: %s", err)
 	}
+
 	n, err := file.Write(bytes)
 	if err != nil {
-		fmt.Println("Error writing ", len(bytes), " to file, ", n, " bytes written: ", err)
-		return
+		return fmt.Errorf("Error writing %d to file, %d bytes written: %s", len(bytes), n, err)
 	}
+
+	return nil
 }
 
-func deleteOldStates(now int64) {
+func deleteOldStates(now int64) error {
 	files, err := os.ReadDir("./data")
 	if err != nil {
-		fmt.Println("Error reading ./data directory:", err)
-		return
+		return fmt.Errorf("Error reading ./data directory: %s", err)
 	}
 
 	for _, file := range files {
@@ -269,9 +280,11 @@ func deleteOldStates(now int64) {
 		filePath := "./data/" + file.Name()
 		err = os.Remove(filePath)
 		if err != nil {
-			fmt.Println("Error deleting file:", filePath, err)
+			return fmt.Errorf("Error deleting file: %s %s", filePath, err)
 		}
 	}
+
+	return nil
 }
 
 func main() {
