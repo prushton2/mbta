@@ -24,10 +24,6 @@ Both CR and Subway are merged into a Train object, with identifiers
         "brand": <string>, //CRRC, HSP-46, GP40MC, CAF, etc
         "type": <int>, //Type of car (CRRC RL is type 4, GL type 7-9, etc)
     },
-    "stop_sequence": {
-        "id": <int>,
-        "name": <string>,
-    },
     "trip": {
         "line": <string>, //Orange, Ashmont, CR-Lowell, etc
         "headsign": <string>, //headsign

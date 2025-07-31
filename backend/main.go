@@ -141,35 +141,8 @@ func getTrainUpdates() {
 	}
 }
 
-func deleteOldStates(now int64) {
-	files, err := os.ReadDir("./data")
-	if err != nil {
-		fmt.Println("Error reading ./data directory:", err)
-		return
-	}
-
-	for _, file := range files {
-
-		dateCreated, err := strconv.ParseInt(strings.Split(file.Name(), ".")[0], 10, 64)
-		if err != nil {
-			fmt.Println("Error parsing file name ", file.Name(), " to int64, continuing. :", err)
-			continue
-		}
-
-		if dateCreated >= now-86400 {
-			continue
-		}
-
-		filePath := "./data/" + file.Name()
-		err = os.Remove(filePath)
-		if err != nil {
-			fmt.Println("Error deleting file:", filePath, err)
-		}
-	}
-}
-
 func getCurrentState(now int64) {
-	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=2&include=trip")
+	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip")
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return
@@ -211,27 +184,19 @@ func getCurrentState(now int64) {
 	}
 
 	// rewrite it to here so theres significantly less data to store
-	var storedData StoredData = StoredData{
-		Data:      make([]TrainInfo, 0),
-		Timestamp: now,
+	var snapshot Snapshot = Snapshot{
+		Train: make([]Train, 0),
 	}
 
 	for _, vehicle := range response.Data {
-		var train TrainInfo = TrainInfo{}
+		var train Train = Train{}
 		thisTrip, exists := tripDataMap[vehicle.Relationships.Trip.Data.ID]
+
 		if !exists {
 			fmt.Printf("Trip data missing for train info %v\n", vehicle)
 			continue
 		}
 
-		train.Bearing = vehicle.Attributes.Bearing
-		train.Headsign = thisTrip.Attributes.Headsign
-		train.Label = vehicle.Attributes.Label
-		train.Latitude = vehicle.Attributes.Latitude
-		train.Longitude = vehicle.Attributes.Longitude
-		train.Speed = vehicle.Attributes.Speed
-
-		storedData.Data = append(storedData.Data, train)
 	}
 
 	// each file is one "moment" of train data
@@ -250,6 +215,33 @@ func getCurrentState(now int64) {
 	if err != nil {
 		fmt.Println("Error writing ", len(bytes), " to file, ", n, " bytes written: ", err)
 		return
+	}
+}
+
+func deleteOldStates(now int64) {
+	files, err := os.ReadDir("./data")
+	if err != nil {
+		fmt.Println("Error reading ./data directory:", err)
+		return
+	}
+
+	for _, file := range files {
+
+		dateCreated, err := strconv.ParseInt(strings.Split(file.Name(), ".")[0], 10, 64)
+		if err != nil {
+			fmt.Println("Error parsing file name ", file.Name(), " to int64, continuing. :", err)
+			continue
+		}
+
+		if dateCreated >= now-86400 {
+			continue
+		}
+
+		filePath := "./data/" + file.Name()
+		err = os.Remove(filePath)
+		if err != nil {
+			fmt.Println("Error deleting file:", filePath, err)
+		}
 	}
 }
 
