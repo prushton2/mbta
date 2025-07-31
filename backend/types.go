@@ -10,18 +10,18 @@ type VehicleDataResponse struct {
 	ID         string `json:"id"`
 	Type       string `json:"type"`
 	Attributes struct {
-		Bearing         *int     `json:"bearing"`
-		Carriages       []string `json:"carriages"`
-		CurrentStatus   string   `json:"current_status"`
-		CurrentStopSeq  int      `json:"current_stop_sequence"`
-		DirectionID     int      `json:"direction_id"`
-		Label           string   `json:"label"`
-		Latitude        float64  `json:"latitude"`
-		Longitude       float64  `json:"longitude"`
-		OccupancyStatus *string  `json:"occupancy_status"`
-		Revenue         string   `json:"revenue"`
-		Speed           float64  `json:"speed"`
-		UpdatedAt       string   `json:"updated_at"`
+		Bearing         *int             `json:"bearing"`
+		Carriages       []TrainCarriages `json:"carriages"`
+		CurrentStatus   string           `json:"current_status"`
+		CurrentStopSeq  int              `json:"current_stop_sequence"`
+		DirectionID     int              `json:"direction_id"`
+		Label           string           `json:"label"`
+		Latitude        float64          `json:"latitude"`
+		Longitude       float64          `json:"longitude"`
+		OccupancyStatus *string          `json:"occupancy_status"`
+		Revenue         string           `json:"revenue"`
+		Speed           float64          `json:"speed"`
+		UpdatedAt       string           `json:"updated_at"`
 	} `json:"attributes"`
 	Links struct {
 		Self string `json:"self"`
@@ -95,36 +95,40 @@ type ApiData struct {
 	Version string `json:"version"`
 }
 
+type TrainCar struct {
+	Brand string `json:"brand"` // CRRC, HSP-46, GP40MC, CAF, etc
+	Type  int    `json:"type"`  // Type of car (CRRC RL is type 4, GL type 7-9, etc)
+}
+
+type TrainTrip struct {
+	Line         string `json:"line"`     // Orange, Ashmont, CR-Lowell, etc
+	Headsign     string `json:"headsign"` // headsign
+	DirectionID  int    `json:"direction_id"`
+	BikesAllowed int    `json:"bikes_allowed"`
+}
+
+type TrainCarriages struct {
+	Label               string `json:"label"`
+	OccupancyStatus     string `json:"occupancy_status"`
+	OccupancyPercentage int    `json:"occupancy_percentage"`
+}
+
+type TrainAttributes struct {
+	Bearing         *int             `json:"bearing"`
+	Speed           float64          `json:"speed"` // mph
+	Label           string           `json:"label"`
+	Latitude        float64          `json:"latitude"`
+	Longitude       float64          `json:"longitude"`
+	CurrentStatus   string           `json:"current_status"`
+	OccupancyStatus *string          `json:"occupancy_status"` // occupancy status is set here for CR, and set in carriages for Subway
+	Revenue         string           `json:"revenue"`
+	Carriages       []TrainCarriages `json:"carriages"`
+}
+
 type Train struct {
-	Car struct {
-		Brand string `json:"brand"` // CRRC, HSP-46, GP40MC, CAF, etc
-		Type  int    `json:"type"`  // Type of car (CRRC RL is type 4, GL type 7-9, etc)
-	} `json:"car"`
-	StopSequence struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	} `json:"stop_sequence"`
-	Trip struct {
-		Line         string `json:"line"`     // Orange, Ashmont, CR-Lowell, etc
-		Headsign     string `json:"headsign"` // headsign
-		DirectionID  int    `json:"direction_id"`
-		BikesAllowed int    `json:"bikes_allowed"`
-	} `json:"trip"`
-	Attributes struct {
-		Bearing         int     `json:"bearing"`
-		Speed           int     `json:"speed"` // mph
-		Label           string  `json:"label"`
-		Latitude        float64 `json:"latitude"`
-		Longitude       float64 `json:"longitude"`
-		CurrentStatus   string  `json:"current_status"`
-		OccupancyStatus string  `json:"occupancy_status"` // occupancy status is set here for CR, and set in carriages for Subway
-		Revenue         string  `json:"revenue"`
-		Carriages       []struct {
-			Label               string `json:"label"`
-			OccupancyStatus     string `json:"occupancy_status"`
-			OccupancyPercentage int    `json:"occupancy_percentage"`
-		} `json:"carriages"`
-	} `json:"attributes"`
+	Car        TrainCar        `json:"car"`
+	Trip       TrainTrip       `json:"trip"`
+	Attributes TrainAttributes `json:"attributes"`
 }
 
 type Snapshot struct {

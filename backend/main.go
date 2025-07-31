@@ -101,33 +101,37 @@ func healthcheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Request-Method", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
+	/*
+	   // move back a minute
+	   twominsago := time.Now().Unix() - 60
+	   // this rounds it back another minute effectively
+	   twominsago = twominsago - twominsago%60
 
-	// move back a minute
-	twominsago := time.Now().Unix() - 60
-	// this rounds it back another minute effectively
-	twominsago = twominsago - twominsago%60
+	   file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", twominsago), os.O_RDONLY, 0644)
 
-	file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", twominsago), os.O_RDONLY, 0644)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("File ./data/%d.json likely doesnt exist, failing healthcheck", twominsago), http.StatusInternalServerError)
-		return
-	}
+	   	if err != nil {
+	   		http.Error(w, fmt.Sprintf("File ./data/%d.json likely doesnt exist, failing healthcheck", twominsago), http.StatusInternalServerError)
+	   		return
+	   	}
 
-	var unmarshaled StoredData
+	   var unmarshaled StoredData
 
-	body, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error reading file %s", file.Name()), http.StatusInternalServerError)
-		return
-	}
+	   body, err := io.ReadAll(file)
 
-	err = json.Unmarshal(body, &unmarshaled)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Data inside file %s is likely corrupt", file.Name()), http.StatusInternalServerError)
-		return
-	}
+	   	if err != nil {
+	   		http.Error(w, fmt.Sprintf("Error reading file %s", file.Name()), http.StatusInternalServerError)
+	   		return
+	   	}
 
-	io.WriteString(w, "Healthcheck passed")
+	   err = json.Unmarshal(body, &unmarshaled)
+
+	   	if err != nil {
+	   		http.Error(w, fmt.Sprintf("Data inside file %s is likely corrupt", file.Name()), http.StatusInternalServerError)
+	   		return
+	   	}
+
+	   io.WriteString(w, "Healthcheck passed")
+	*/
 }
 
 func getTrainUpdates() {
@@ -197,6 +201,31 @@ func getCurrentState(now int64) {
 			continue
 		}
 
+		train = Train{
+			Car: TrainCar{
+				Brand: "",
+				Type:  0,
+			},
+			Trip: TrainTrip{
+				Line:         "",
+				Headsign:     thisTrip.Attributes.Headsign,
+				DirectionID:  thisTrip.Attributes.DirectionID,
+				BikesAllowed: thisTrip.Attributes.BikesAllowed,
+			},
+			Attributes: TrainAttributes{
+				Bearing:         vehicle.Attributes.Bearing,
+				Speed:           vehicle.Attributes.Speed,
+				Label:           vehicle.Attributes.Label,
+				Latitude:        vehicle.Attributes.Latitude,
+				Longitude:       vehicle.Attributes.Longitude,
+				CurrentStatus:   vehicle.Attributes.CurrentStatus,
+				OccupancyStatus: vehicle.Attributes.OccupancyStatus,
+				Revenue:         vehicle.Attributes.Revenue,
+				Carriages:       vehicle.Attributes.Carriages,
+			},
+		}
+
+		snapshot.Train = append(snapshot.Train, train)
 	}
 
 	// each file is one "moment" of train data
@@ -206,7 +235,7 @@ func getCurrentState(now int64) {
 		return
 	}
 
-	bytes, err := json.Marshal(storedData)
+	bytes, err := json.Marshal(snapshot)
 	if err != nil {
 		fmt.Println("Error marshalling storedData.Data: ", err)
 		return
