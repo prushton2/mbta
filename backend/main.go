@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,13 +18,24 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Request-Method", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 
-	io.WriteString(w, "responseString")
+	snapshotMutex.Lock()
+	str, err := json.Marshal(snapshot)
+	snapshotMutex.Unlock()
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error marshaling data: ", err), http.StatusInternalServerError)
+		return
+	}
+
+	io.Writer.Write(w, str)
 }
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Request-Method", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+	io.WriteString(w, "responseString")
 }
 
 func main() {

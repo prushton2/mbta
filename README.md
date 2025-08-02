@@ -41,7 +41,6 @@ Both CR and Subway are merged into a Train object, with identifiers
         "revenue": <string>,
         "carriages": {
             "label": <string>,
-            "occupancy_status": <string>,
             "occupancy_percentage": <int>
         }[]
     },
@@ -53,7 +52,7 @@ A snapshot returns the state of the T at one point in time. This is returned by 
 
 ```json
 {
-    "train": <Train[]>,
+    "trains": <Train[]>,
     "bus": null,
     "ferry": null,
 }

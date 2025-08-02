@@ -109,7 +109,6 @@ type TrainTrip struct {
 
 type TrainCarriages struct {
 	Label               string `json:"label"`
-	OccupancyStatus     string `json:"occupancy_status"`
 	OccupancyPercentage int    `json:"occupancy_percentage"`
 }
 
@@ -132,7 +131,7 @@ type Train struct {
 }
 
 type Snapshot struct {
-	Train []Train `json:"train"`
+	Trains []Train `json:"trains"`
 }
 
 type Timeframe struct {

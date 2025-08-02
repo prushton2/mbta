@@ -60,7 +60,7 @@ func getCurrentState() (types.Snapshot, error) {
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return types.Snapshot{
-			Train: make([]types.Train, 0),
+			Trains: make([]types.Train, 0),
 		}, nil
 	}
 
@@ -73,7 +73,7 @@ func getCurrentState() (types.Snapshot, error) {
 
 	// rewrite it to here so theres significantly less data to store
 	var snapshot types.Snapshot = types.Snapshot{
-		Train: make([]types.Train, 0),
+		Trains: make([]types.Train, 0),
 	}
 
 	for _, vehicle := range response.Data {
@@ -81,7 +81,7 @@ func getCurrentState() (types.Snapshot, error) {
 		thisTrip, exists := tripDataMap[vehicle.Relationships.Trip.Data.ID]
 
 		if !exists {
-			fmt.Printf("Trip data missing for train info %v\n", vehicle)
+			// fmt.Printf("Trip data missing for train info %v\n", vehicle)
 			continue
 		}
 
@@ -109,7 +109,7 @@ func getCurrentState() (types.Snapshot, error) {
 			},
 		}
 
-		snapshot.Train = append(snapshot.Train, train)
+		snapshot.Trains = append(snapshot.Trains, train)
 	}
 
 	// each file is one "moment" of train data
