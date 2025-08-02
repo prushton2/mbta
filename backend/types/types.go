@@ -1,4 +1,4 @@
-package main
+package types
 
 type APIResponse struct {
 	Data     []VehicleDataResponse `json:"data"`

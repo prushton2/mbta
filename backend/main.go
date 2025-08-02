@@ -10,12 +10,14 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"prushton.com/mbta/types"
 )
 
 var snapshotMutex sync.RWMutex
-var snapshot Snapshot = Snapshot{}
+var snapshot types.Snapshot = types.Snapshot{}
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func getLiveData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Request-Method", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -147,7 +149,7 @@ func getTrainUpdates() {
 			snap, err := getCurrentState()
 			if err != nil {
 				fmt.Printf("%s", err)
-				snapshot = Snapshot{}
+				snapshot = types.Snapshot{}
 			} else {
 				snapshot = snap
 			}
@@ -168,40 +170,40 @@ func getTrainUpdates() {
 	}
 }
 
-func getCurrentState() (Snapshot, error) {
+func getCurrentState() (types.Snapshot, error) {
 	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip")
 	if err != nil {
-		return Snapshot{}, fmt.Errorf("Error making GET request: %s", err)
+		return types.Snapshot{}, fmt.Errorf("Error making GET request: %s", err)
 	}
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return Snapshot{}, fmt.Errorf("Error reading response body: %s", err)
+		return types.Snapshot{}, fmt.Errorf("Error reading response body: %s", err)
 	}
 
-	var response APIResponse
+	var response types.APIResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return Snapshot{
-			Train: make([]Train, 0),
+		return types.Snapshot{
+			Train: make([]types.Train, 0),
 		}, nil
 	}
 
 	// store it in a map so it can be O(1) indexed when iterating over vehicles
-	var tripDataMap map[string]TripDataResponse = make(map[string]TripDataResponse)
+	var tripDataMap map[string]types.TripDataResponse = make(map[string]types.TripDataResponse)
 
 	for _, trip := range response.Included {
 		tripDataMap[trip.ID] = trip
 	}
 
 	// rewrite it to here so theres significantly less data to store
-	var snapshot Snapshot = Snapshot{
-		Train: make([]Train, 0),
+	var snapshot types.Snapshot = types.Snapshot{
+		Train: make([]types.Train, 0),
 	}
 
 	for _, vehicle := range response.Data {
-		var train Train = Train{}
+		var train types.Train = types.Train{}
 		thisTrip, exists := tripDataMap[vehicle.Relationships.Trip.Data.ID]
 
 		if !exists {
@@ -209,18 +211,18 @@ func getCurrentState() (Snapshot, error) {
 			continue
 		}
 
-		train = Train{
-			Car: TrainCar{
+		train = types.Train{
+			Car: types.TrainCar{
 				Brand: "",
 				Type:  0,
 			},
-			Trip: TrainTrip{
+			Trip: types.TrainTrip{
 				Line:         "",
 				Headsign:     thisTrip.Attributes.Headsign,
 				DirectionID:  thisTrip.Attributes.DirectionID,
 				BikesAllowed: thisTrip.Attributes.BikesAllowed,
 			},
-			Attributes: TrainAttributes{
+			Attributes: types.TrainAttributes{
 				Bearing:         vehicle.Attributes.Bearing,
 				Speed:           vehicle.Attributes.Speed,
 				Label:           vehicle.Attributes.Label,
@@ -240,7 +242,7 @@ func getCurrentState() (Snapshot, error) {
 	return snapshot, nil
 }
 
-func saveStateToFile(now int64, snapshot Snapshot) error {
+func saveStateToFile(now int64, snapshot types.Snapshot) error {
 	file, err := os.OpenFile(fmt.Sprintf("./data/%d.json", now), os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("Error opening file ./data/%d.json: %s", now, err)
@@ -288,7 +290,7 @@ func deleteOldStates(now int64, deleteOlderThan int64) error {
 }
 
 func main() {
-	http.HandleFunc("/get", handler)
+	http.HandleFunc("/v1/live", getLiveData)
 	http.HandleFunc("/healthcheck", healthcheck)
 
 	go getTrainUpdates()
