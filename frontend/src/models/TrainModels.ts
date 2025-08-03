@@ -5,6 +5,7 @@ export interface TrainCar {
 
 export interface TrainTrip {
     line: string;          // Orange, Ashmont, CR-Lowell, etc
+    color: number;
     headsign: string;      // headsign
     direction_id: number;
     bikes_allowed: number;

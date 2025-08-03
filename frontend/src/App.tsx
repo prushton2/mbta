@@ -1,9 +1,10 @@
 import './App.css'
 import 'leaflet/dist/leaflet.css'
-import trainIcon from './assets/train.svg'
+import trainIconSVG from './assets/train.svg'
+import arrowIconPNG from './assets/arrow.png'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker} from 'react-leaflet';
 import { Icon } from 'leaflet';
-import { polyline, getLines, getColor } from './Lines';
+import { polyline, getLines, getColor, getColorFromLineName } from './Lines';
 import { JSX, useEffect, useState} from 'react';
 import { getLatestTrainData } from './API';
 import { Snapshot } from './models/GenericModels';
@@ -18,7 +19,14 @@ export function App() {
   const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
   let icon: Icon = new Icon({
-    iconUrl: trainIcon,
+    iconUrl: trainIconSVG,
+    iconSize: [25, 25],
+    iconAnchor: [12.5, 12.5],
+    popupAnchor: [0, -12.5]
+  });
+
+  let arrowIcon: Icon = new Icon({
+    iconUrl: arrowIconPNG,
     iconSize: [25, 25],
     iconAnchor: [12.5, 12.5],
     popupAnchor: [0, -12.5]
@@ -28,7 +36,7 @@ export function App() {
     let element: JSX.Element[] = []
     getLines().forEach((e: string) => {
       element.push(
-        <Polyline key={element.length} positions={polyline(e) as any} color={getColor(e)} />
+        <Polyline key={element.length} positions={polyline(e) as any} color={getColorFromLineName(e)} />
       )
     })
     return element;
@@ -53,12 +61,12 @@ export function App() {
       markerMap.set(e.attributes.label, <div key={e.attributes.label} style={{display: "none"}}>
         <Marker icon={icon} position={[e.attributes.latitude, e.attributes.longitude]}>
           <Popup>
-            <h2>{e.attributes.label} ({e.car.brand}{e.car.type != 0 ? `Type ${e.car.type}` : ""})</h2>
+            <h2>{e.attributes.label} ({e.car.brand}{e.car.type != 0 ? ` Type ${e.car.type}` : ""})</h2>
             <p>Speed: {e.attributes.speed || 0.0}</p>
             <p>Headsign: {e.trip.headsign}</p>
           </Popup>
         </Marker>
-        <CircleMarker center={[e.attributes.latitude, e.attributes.longitude]} radius={15} color={getColor("CR-all")} fillColor={getColor("CR-all")} fillOpacity={1}/>
+        <CircleMarker center={[e.attributes.latitude, e.attributes.longitude]} radius={15} color={getColor(e.trip.color)} fillColor={getColor(e.trip.color)} fillOpacity={1}/>
       </div>)
     });
 

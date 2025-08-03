@@ -82,13 +82,15 @@ let lines = {
     ]
 };
 
+// let lines = lines_old;
+
 export function polyline(line: string): number[][][] {
     let polylines: string[] | null = lines[line as keyof typeof lines];
-    if(polylines == null) {
+    if (polylines == null) {
         return [[[]]];
     }
     let decoded: number[][][] = [];
-    for(let i = 0; i < polylines.length; i++) {
+    for (let i = 0; i < polylines.length; i++) {
         decoded.push(
             decode(polylines[i])
         );
@@ -106,9 +108,14 @@ export function getLines(): string[] {
     return keys;
 }
 
-export function getColor(line: string): string {
+export function getColor(bytes: number): string {
+    // this isnt AI idk what youre talking about
+    return `#${((bytes >> 16) & 0xFF).toString(16).padStart(2, '0')}${((bytes >> 8) & 0xFF).toString(16).padStart(2, '0')}${(bytes & 0xFF).toString(16).padStart(2, '0')}`;
+}
+
+export function getColorFromLineName(line: string): string {
     let half = line.split("-")[0];
-    switch(half) {
+    switch (half) {
         case "Red":
         case "Mattapan":
             return "#DA291C";
