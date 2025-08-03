@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"prushton.com/mbta/trainCars"
 	"prushton.com/mbta/types"
 )
 
@@ -113,10 +114,14 @@ func getCurrentState() (types.Snapshot, error) {
 			continue
 		}
 
+		headCarLabel := strings.Split(vehicle.Attributes.Label, "-")[0]
+
+		carType, carBrand := trainCars.GetCarAndType(thisRoute.ID, headCarLabel)
+
 		train = types.Train{
 			Car: types.TrainCar{
-				Brand: "",
-				Type:  0,
+				Brand: carBrand,
+				Type:  carType,
 			},
 			Trip: types.TrainTrip{
 				Line:         thisRoute.ID,

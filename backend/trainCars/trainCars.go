@@ -1,6 +1,11 @@
 package trainCars
 
-import "prushton.com/mbta/types"
+import (
+	"strconv"
+	"strings"
+
+	"prushton.com/mbta/types"
+)
 
 var VehicleInfo map[string][]types.VehicleTypeInfo = map[string][]types.VehicleTypeInfo{
 	"CR": {
@@ -32,24 +37,47 @@ var VehicleInfo map[string][]types.VehicleTypeInfo = map[string][]types.VehicleT
 		{StartID: 1700, EndID: 1724, Type: 0, Model: "CTC-4"},
 		{StartID: 1800, EndID: 1870, Type: 0, Model: "CTC-5"},
 	},
-	"BL": {
+	"Blue": {
 		{StartID: 700, EndID: 793, Type: 5, Model: "Siemens"},
 	},
-	"GL": {
+	"Green": {
 		{StartID: 3600, EndID: 3699, Type: 7, Model: "Kinki-Sharyo"},
 		{StartID: 3700, EndID: 3719, Type: 7, Model: "Kinki-Sharyo"},
 		{StartID: 3800, EndID: 3894, Type: 8, Model: "Breda"},
 		{StartID: 3900, EndID: 3923, Type: 9, Model: "CAF"},
 		{StartID: 4001, EndID: 4102, Type: 10, Model: "CAF"},
 	},
-	"OL": {
+	"Orange": {
 		{StartID: 1400, EndID: 1551, Type: 14, Model: "CRRC"},
 	},
-	"RL": {
+	"Red": {
 		{StartID: 1500, EndID: 1523, Type: 1, Model: "Pullman-Standard"},
 		{StartID: 1600, EndID: 1651, Type: 1, Model: "Pullman-Standard"},
 		{StartID: 1700, EndID: 1757, Type: 2, Model: "UTDC"},
 		{StartID: 1800, EndID: 1885, Type: 3, Model: "Bombardier"},
 		{StartID: 1900, EndID: 2151, Type: 4, Model: "CRRC"},
 	},
+}
+
+func GetCarAndType(fullLine string, labelstring string) (int32, string) {
+	label64, err := strconv.ParseInt(labelstring, 10, 32)
+	if err != nil {
+		return 0, ""
+	}
+
+	label := int32(label64)
+	line := strings.Split(fullLine, "-")[0]
+
+	carTypes, exists := VehicleInfo[line]
+	if !exists {
+		return 0, ""
+	}
+
+	for _, carType := range carTypes {
+		if label >= carType.StartID && label <= carType.EndID {
+			return carType.Type, carType.Model
+		}
+	}
+
+	return 0, ""
 }

@@ -143,8 +143,7 @@ type ApiData struct {
 
 type TrainCar struct {
 	Brand string `json:"brand"` // CRRC, HSP-46, GP40MC, CAF, etc
-	Type  int    `json:"type"`  // Type of car (CRRC RL is type 4, GL type 7-9, etc)
-	Line  string `json:"line"`  // RL, M, CR-Lowell, etc
+	Type  int32  `json:"type"`  // Type of car (CRRC RL is type 4, GL type 7-9, etc)
 }
 
 type TrainTrip struct {
