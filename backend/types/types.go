@@ -185,3 +185,10 @@ type Snapshot struct {
 type Timeframe struct {
 	Snapshots map[int]Snapshot `json:"snapshots"`
 }
+
+type VehicleTypeInfo struct {
+	StartID int32
+	EndID   int32
+	Type    int32
+	Model   string
+}
