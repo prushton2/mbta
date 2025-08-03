@@ -1,32 +1,27 @@
 import './App.css'
 import 'leaflet/dist/leaflet.css'
-import trainIconSVG from './assets/train.svg'
-import arrowIconPNG from './assets/arrow.png'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker} from 'react-leaflet';
-import { Icon } from 'leaflet';
+import L from 'leaflet';
+import 'leaflet-rotatedmarker';
+import arrowIconSVG from './assets/arrow.svg'
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
 import { polyline, getLines, getColor, getColorFromLineName } from './Lines';
-import { JSX, useEffect, useState} from 'react';
+import { JSX, useEffect, useRef, useState } from 'react';
 import { getLatestTrainData } from './API';
 import { Snapshot } from './models/GenericModels';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
 
 export function App() {
+  const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
   const [slider, setSlider] = useState<number>(1440);
-  const [autoplaySpeed, setAutoplaySpeed] = useState<number>(0);
-  const [sliderMax, setSliderMax] = useState<number>(1440);
+  // const [autoplaySpeed, setAutoplaySpeed] = useState<number>(0);
+  // const [sliderMax, setSliderMax] = useState<number>(1440);
   const [liveTrainInfo, setLiveTrainInfo] = useState<Snapshot | null>(null);
   const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
-  let icon: Icon = new Icon({
-    iconUrl: trainIconSVG,
-    iconSize: [25, 25],
-    iconAnchor: [12.5, 12.5],
-    popupAnchor: [0, -12.5]
-  });
 
-  let arrowIcon: Icon = new Icon({
-    iconUrl: arrowIconPNG,
+  let icon: L.Icon = L.icon({
+    iconUrl: arrowIconSVG,
     iconSize: [25, 25],
     iconAnchor: [12.5, 12.5],
     popupAnchor: [0, -12.5]
@@ -41,37 +36,37 @@ export function App() {
     })
     return element;
   }
-  
+
   function renderTrains(): JSX.Element[] {
-    
-    let source: Snapshot = {trains: []} as Snapshot
+    let source: Snapshot = { trains: [] } as Snapshot
     if (slider == 1440 && liveTrainInfo != null) {
       source = liveTrainInfo
     } else {
       // historical data mode
     }
 
-    if(!persistTrains) {
-      [...markerMap.keys()].forEach((e) => {
-        markerMap.set(e, <></>)
-      })
-    }
-
     source.trains.forEach((e) => {
-      markerMap.set(e.attributes.label, <div key={e.attributes.label} style={{display: "none"}}>
-        <Marker icon={icon} position={[e.attributes.latitude, e.attributes.longitude]}>
+      const setRef = (instance: L.Marker | null) => {
+        if (instance) {
+          trainMarkerRefs.current.set(e.attributes.label, instance);
+        } else {
+          trainMarkerRefs.current.delete(e.attributes.label);
+        }
+      };
+
+      markerMap.set(e.attributes.label,
+        //@ts-ignore
+        <Marker key={e.attributes.label} icon={icon} position={[e.attributes.latitude, e.attributes.longitude]} rotationAngle={270 + e.attributes.bearing} rotationOrigin="center" ref={setRef}>
           <Popup>
-            <h2>{e.attributes.label} ({e.car.brand}{e.car.type != 0 ? ` Type ${e.car.type}` : ""})</h2>
+            <h2>{e.attributes.label} ({e.car.brand}{e.car.type !== 0 ? ` Type ${e.car.type}` : ""})</h2>
             <p>Speed: {e.attributes.speed || 0.0}</p>
             <p>Headsign: {e.trip.headsign}</p>
+            <p>Bearing: {e.attributes.bearing}</p>
           </Popup>
+          <CircleMarker center={[e.attributes.latitude, e.attributes.longitude]} radius={15} color={getColor(e.trip.color)} fillColor={getColor(e.trip.color)} fillOpacity={1} />
         </Marker>
-        <CircleMarker center={[e.attributes.latitude, e.attributes.longitude]} radius={15} color={getColor(e.trip.color)} fillColor={getColor(e.trip.color)} fillOpacity={1}/>
-      </div>)
+      );
     });
-
-
-
 
     return [...markerMap.values()];
   }
@@ -85,14 +80,26 @@ export function App() {
       hour12: false
     });
   }
-  
+
 
   useEffect(() => {
     async function run() {
       let data = await getLatestTrainData()
+      
+      if (data != null) {
+        data.trains.forEach((e) => {
+          let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
+          
+          if (markerInstance != undefined) {
+            //@ts-ignore
+            markerInstance.setRotationAngle(e.attributes.bearing + 270);
+            markerInstance.setLatLng([e.attributes.latitude, e.attributes.longitude]);
+          }
+        })
+      }
       setLiveTrainInfo(data);
     }
-    
+
     run()
 
     const interval = setInterval(() => {
@@ -102,52 +109,14 @@ export function App() {
     return () => clearInterval(interval);
   }, [])
 
-  // useEffect(() => {
-  //   let interval: number = 0;
-  //   if (autoplaySpeed > 0) {
-
-  //     interval = setInterval(() => {
-  //       setSlider((prevSlider) => {
-  //         if (prevSlider >= sliderMax) {
-  //           return 0;
-  //         }
-  //         return prevSlider + 1;
-  //       });
-  //     }, 1000 / autoplaySpeed);
-
-  //   } else {
-  //     clearInterval(interval);
-  //   }
-
-  //   return () => clearInterval(interval);
-  // }, [autoplaySpeed]);
-
   return <>
-      {/* <div className="slidecontainer" style={{ height: "5vh" }}>
-        <input type="range" min="1" value={slider} max={sliderMax} className="slider" onChange={(e) => setSlider(e.target.valueAsNumber)}/>
-      </div> */}
-      
-      {/* <div style={{ position: "absolute", right: "1vh", top: "4vh", color: "white" }}>
-        <h3>Time: {trainInfo == null ? 0 : convertTimestampToDate(trainInfo.elements[slider].timestamp)}</h3>
-      </div> */}
+    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "98vh", width: "100%", backgroundColor: "black" }}>
+      <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
+      {renderLines()}
+      {renderTrains()}
+    </MapContainer>
 
-      {/* <div className="slidecontainer" style={{ position: "absolute", right: "1vh", top: "10vh", height: "5vh", width: "18%"}}>
-        <input type="range" min="0" max="60" className="slider" defaultValue="0" onChange={(e) => setAutoplaySpeed(e.target.valueAsNumber)}/>
-        <p style={{ color: "white", fontSize: "0.8em", textAlign: "center", marginTop: "5px" }}>Adjust autoplay speed ({autoplaySpeed == 0 ? "off" : `${autoplaySpeed}min/sec`})</p>
-      </div>
-
-      <div className="slidecontainer" style={{ position: "absolute", right: "1vh", top: "15vh", height: "5vh", width: "18%"}}>
-        <input type="checkbox" onChange={(e) => setPersistTrains(e.target.checked)}/><label style={{ color: "white", fontSize: "0.8em", textAlign: "center", marginTop: "5px", width: "fill"}}> Persist out of service trains</label>
-      </div> */}
-
-
-      <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "98vh", width: "100%", backgroundColor:"black" }}>
-        <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
-        {renderLines()}
-        {renderTrains()}
-      </MapContainer>
-      
-    </>
+  </>
 }
 
 export default App
