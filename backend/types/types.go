@@ -1,8 +1,10 @@
 package types
 
+import "encoding/json"
+
 type APIResponse struct {
 	Data     []VehicleDataResponse `json:"data"`
-	Included []TripDataResponse    `json:"included"`
+	Included []json.RawMessage     `json:"included"`
 	Jsonapi  ApiData               `json:"jsonapi"`
 }
 
@@ -91,6 +93,50 @@ type TripDataResponse struct {
 	} `json:"relationships"`
 }
 
+type RouteDataResponse struct {
+	// Attributes represents the "attributes" JSON object.
+	Attributes struct {
+		Color                 string   `json:"color"`
+		Description           string   `json:"description"`
+		DirectionDestinations []string `json:"direction_destinations"`
+		DirectionNames        []string `json:"direction_names"`
+		FareClass             string   `json:"fare_class"`
+		ListedRoute           bool     `json:"listed_route"`
+		LongName              string   `json:"long_name"`
+		ShortName             string   `json:"short_name"`
+		SortOrder             int      `json:"sort_order"`
+		TextColor             string   `json:"text_color"`
+		Type                  int      `json:"type"`
+	} `json:"attributes"`
+
+	ID string `json:"id"`
+
+	Links struct {
+		Self string `json:"self"`
+	} `json:"links"`
+
+	Relationships struct {
+		Agency struct {
+			Data struct {
+				ID   string `json:"id"`
+				Type string `json:"type"`
+			} `json:"data"`
+		} `json:"agency"`
+		Line struct {
+			Data struct {
+				ID   string `json:"id"`
+				Type string `json:"type"`
+			} `json:"data"`
+		} `json:"line"`
+	} `json:"relationships"`
+
+	Type string `json:"type"`
+}
+
+type GenericDataResponse struct {
+	Type string `json:"type"`
+}
+
 type ApiData struct {
 	Version string `json:"version"`
 }
@@ -98,10 +144,12 @@ type ApiData struct {
 type TrainCar struct {
 	Brand string `json:"brand"` // CRRC, HSP-46, GP40MC, CAF, etc
 	Type  int    `json:"type"`  // Type of car (CRRC RL is type 4, GL type 7-9, etc)
+	Line  string `json:"line"`  // RL, M, CR-Lowell, etc
 }
 
 type TrainTrip struct {
 	Line         string `json:"line"`     // Orange, Ashmont, CR-Lowell, etc
+	Color        int32  `json:"color"`    // 4 bit int of the color: 0x00 r g b
 	Headsign     string `json:"headsign"` // headsign
 	DirectionID  int    `json:"direction_id"`
 	BikesAllowed int    `json:"bikes_allowed"`

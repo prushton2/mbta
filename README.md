@@ -26,6 +26,7 @@ Both CR and Subway are merged into a Train object, with identifiers
     },
     "trip": {
         "line": <string>, //Orange, Ashmont, CR-Lowell, etc
+        "color": <int32>,
         "headsign": <string>, //headsign
         "direction_id": <int>,
         "bikes_allowed": <int>

@@ -22,7 +22,7 @@ func getTrainUpdates() {
 
 			snap, err := getCurrentState()
 			if err != nil {
-				fmt.Printf("%s", err)
+				fmt.Printf("Error: %s\n", err)
 				snapshot = types.Snapshot{}
 			} else {
 				snapshot = snap
@@ -45,7 +45,7 @@ func getTrainUpdates() {
 }
 
 func getCurrentState() (types.Snapshot, error) {
-	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip")
+	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip,route")
 	if err != nil {
 		return types.Snapshot{}, fmt.Errorf("Error making GET request: %s", err)
 	}
@@ -59,6 +59,7 @@ func getCurrentState() (types.Snapshot, error) {
 	var response types.APIResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
+		fmt.Printf("Error unmarshaling data, recovering with empty snapshot: %s\n", err)
 		return types.Snapshot{
 			Trains: make([]types.Train, 0),
 		}, nil
@@ -66,9 +67,35 @@ func getCurrentState() (types.Snapshot, error) {
 
 	// store it in a map so it can be O(1) indexed when iterating over vehicles
 	var tripDataMap map[string]types.TripDataResponse = make(map[string]types.TripDataResponse)
+	var routeDataMap map[string]types.RouteDataResponse = make(map[string]types.RouteDataResponse)
 
-	for _, trip := range response.Included {
-		tripDataMap[trip.ID] = trip
+	for _, included_str := range response.Included {
+		var included types.GenericDataResponse
+		err := json.Unmarshal([]byte(included_str), &included)
+
+		if err != nil {
+			fmt.Printf("Error unmarshaling included data into GenericDataResponse: %s\n", included_str)
+			continue
+		}
+
+		switch included.Type {
+		case "route":
+			var parsed_include types.RouteDataResponse
+			err := json.Unmarshal([]byte(included_str), &parsed_include)
+			if err != nil {
+				fmt.Printf("Error unmarshaling included data to RouteDataResponse: %s\n", included_str)
+				continue
+			}
+			routeDataMap[parsed_include.ID] = parsed_include
+		case "trip":
+			var parsed_include types.TripDataResponse
+			err := json.Unmarshal([]byte(included_str), &parsed_include)
+			if err != nil {
+				fmt.Printf("Error unmarshaling included data to RouteDataResponse: %s\n", included_str)
+				continue
+			}
+			tripDataMap[parsed_include.ID] = parsed_include
+		}
 	}
 
 	// rewrite it to here so theres significantly less data to store
@@ -78,9 +105,10 @@ func getCurrentState() (types.Snapshot, error) {
 
 	for _, vehicle := range response.Data {
 		var train types.Train = types.Train{}
-		thisTrip, exists := tripDataMap[vehicle.Relationships.Trip.Data.ID]
+		thisTrip, tripExists := tripDataMap[vehicle.Relationships.Trip.Data.ID]
+		thisRoute, routeExists := routeDataMap[vehicle.Relationships.Route.Data.ID]
 
-		if !exists {
+		if !tripExists || !routeExists {
 			// fmt.Printf("Trip data missing for train info %v\n", vehicle)
 			continue
 		}
@@ -91,7 +119,8 @@ func getCurrentState() (types.Snapshot, error) {
 				Type:  0,
 			},
 			Trip: types.TrainTrip{
-				Line:         "",
+				Line:         thisRoute.ID,
+				Color:        StringHexToInt32(thisRoute.Attributes.Color),
 				Headsign:     thisTrip.Attributes.Headsign,
 				DirectionID:  thisTrip.Attributes.DirectionID,
 				BikesAllowed: thisTrip.Attributes.BikesAllowed,
@@ -161,4 +190,13 @@ func deleteOldStates(now int64, deleteOlderThan int64) error {
 	}
 
 	return nil
+}
+
+func StringHexToInt32(hex string) int32 {
+	value, err := strconv.ParseInt(hex, 16, 32)
+	if err != nil {
+		fmt.Printf("Error converting hex string to int32: %s\n", err)
+		return 0
+	}
+	return int32(value)
 }

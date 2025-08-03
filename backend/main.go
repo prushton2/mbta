@@ -23,7 +23,7 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 	snapshotMutex.Unlock()
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error marshaling data: ", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Error marshaling data: %s", err), http.StatusInternalServerError)
 		return
 	}
 
