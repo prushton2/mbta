@@ -8,6 +8,7 @@ import { polyline, getLines, getColor, getColorFromLineName } from './Lines';
 import { JSX, useEffect, useRef, useState } from 'react';
 import { getLatestTrainData } from './API';
 import { Snapshot } from './models/GenericModels';
+import TimeSlider from './components/TimeSlider';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
 
@@ -16,7 +17,7 @@ export function App() {
   const [slider, setSlider] = useState<number>(1440);
   // const [autoplaySpeed, setAutoplaySpeed] = useState<number>(0);
   // const [sliderMax, setSliderMax] = useState<number>(1440);
-  const [liveTrainInfo, setLiveTrainInfo] = useState<Snapshot | null>(null);
+  const [displayedTrainInfo, setDisplayedTrainInfo] = useState<Snapshot | null>(null);
   const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
 
@@ -39,8 +40,8 @@ export function App() {
 
   function renderTrains(): JSX.Element[] {
     let source: Snapshot = { trains: [] } as Snapshot
-    if (slider == 1440 && liveTrainInfo != null) {
-      source = liveTrainInfo
+    if (slider == 1440 && displayedTrainInfo != null) {
+      source = displayedTrainInfo
     } else {
       // historical data mode
     }
@@ -71,33 +72,10 @@ export function App() {
     return [...markerMap.values()];
   }
 
-  function convertTimestampToDate(timestamp: number): String {
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
-  }
-
-
   useEffect(() => {
     async function run() {
       let data = await getLatestTrainData()
-      
-      if (data != null) {
-        data.trains.forEach((e) => {
-          let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
-          
-          if (markerInstance != undefined) {
-            //@ts-ignore
-            markerInstance.setRotationAngle(e.attributes.bearing + 270);
-            markerInstance.setLatLng([e.attributes.latitude, e.attributes.longitude]);
-          }
-        })
-      }
-      setLiveTrainInfo(data);
+      setDisplayedTrainInfo(data);
     }
 
     run()
@@ -109,13 +87,27 @@ export function App() {
     return () => clearInterval(interval);
   }, [])
 
+  useEffect(() => {
+    if (displayedTrainInfo != null) {
+      displayedTrainInfo.trains.forEach((e) => {
+        let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
+
+        if (markerInstance != undefined) {
+          //@ts-ignore
+          markerInstance.setRotationAngle(e.attributes.bearing + 270);
+          markerInstance.setLatLng([e.attributes.latitude, e.attributes.longitude]);
+        }
+      })
+    }
+  }, [displayedTrainInfo])
+
   return <>
-    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "98vh", width: "100%", backgroundColor: "black" }}>
+    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100%", backgroundColor: "black" }}>
       <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
       {renderLines()}
       {renderTrains()}
     </MapContainer>
-
+    <TimeSlider />
   </>
 }
 
