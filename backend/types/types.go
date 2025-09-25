@@ -182,7 +182,7 @@ type Snapshot struct {
 }
 
 type Timeframe struct {
-	Snapshots map[int]Snapshot `json:"snapshots"`
+	Snapshots map[int64]Snapshot `json:"snapshots"`
 }
 
 type VehicleTypeInfo struct {
