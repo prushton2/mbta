@@ -92,17 +92,27 @@ export function App() {
   }
 
   useEffect(() => {
-    async function run() {
+    async function fetchLiveTrainData() {
       let data = await getLatestTrainData()
       liveTrainInfo.current = data;
+
+      let localTime = Math.floor(new Date().getTime() / 1000);
+      localTime = localTime - (localTime % 10); // align to previous 10th second
+
+      // if the train data is on the minute, we store it in historical data to save on api calls
+      // and fill the gap described in the timeslider update function
+      if (localTime%60 == 0) {
+        historicalTrainInfo.current.snapshots.set(localTime, data);
+      }
+
       setManualRerender((manualRerender) => !manualRerender)
     }
 
-    run()
+    fetchLiveTrainData()
 
     const interval = setInterval(() => {
       if (slider == 0) {
-        run();
+        fetchLiveTrainData();
       }
     }, 10000);
 
@@ -118,8 +128,19 @@ export function App() {
     <TimeSlider update={async (time, canFetchAPI) => {
       /* get the necessary historical data if able */
       setSlider(time);
+
       if (canFetchAPI) {
-        historicalTrainInfo.current = await getHistoricalTrainData((time * 60)+60);
+        let localTime = Math.floor(new Date().getTime() / 1000);
+        localTime = localTime - (localTime % 60); // align to minute
+        let historicalData = historicalTrainInfo.current.snapshots.get(localTime - (slider * 60))
+
+        // This prevents refetching of known data. Assuming good health on the backend, historicalData being undefined means we havent gone back that far yet, so we need to fetch
+        // This creates a gap. When you first get historical data, its can be visualized as [ historical data ][now]. As time progresses, a gap forms between the data and now
+        // [ historical data ][ unfetched data ][now]. This happens because no new api calls are made to fill the gap. This is solved by filling live train info into 
+        // the historical train info
+        if (historicalData == undefined) {
+          historicalTrainInfo.current = await getHistoricalTrainData((time * 60)+60);
+        }
         setManualRerender(manualRerender => !manualRerender);
       }
     }} />
