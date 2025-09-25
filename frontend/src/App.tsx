@@ -99,8 +99,10 @@ export function App() {
       let localTime = Math.floor(new Date().getTime() / 1000);
       localTime = localTime - (localTime % 10); // align to previous 10th second
 
-      // if the train data is on the minute, we store it in historical data to save on api calls
-      // and fill the gap described in the timeslider update function
+      // if the time the train data was fetched is on the minute, 
+      // we store it in historical data to save on api calls and fill 
+      // the gap described in the timeslider update function
+      
       if (localTime%60 == 0) {
         historicalTrainInfo.current.snapshots.set(localTime, data);
       }
