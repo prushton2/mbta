@@ -4,6 +4,8 @@ services:
     restart: always
     volumes: 
       - ./data:/app/backend/data
+    ports:
+      - 3000:3000
 
   frontend:
     build: 
@@ -11,6 +13,7 @@ services:
       args:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     restart: always
-
+    ports:
+      - 8080:80
     env_file:
       - .env
