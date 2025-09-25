@@ -18,7 +18,7 @@ export function App() {
   const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
 
   const [slider, setSlider] = useState<number>(0);
-  const [manualRerender, setManualRerender] = useState<boolean>(false);
+  const [_manualRerender, setManualRerender] = useState<boolean>(false);
   // const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
   let icon: L.Icon = L.icon({
