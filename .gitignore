@@ -1,1 +1,4 @@
 backend/data
+compose.yaml
+.env
+./backend/mbta
