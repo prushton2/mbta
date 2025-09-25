@@ -48,7 +48,7 @@ func getTrainUpdates() {
 func getCurrentState() (types.Snapshot, error) {
 	resp, err := http.Get("https://api-v3.mbta.com/vehicles?filter[route_type]=0,1,2&include=trip,route")
 	if err != nil {
-		return types.Snapshot{}, fmt.Errorf("Error making GET request: %s", err)
+		return types.Snapshot{}, fmt.Errorf("Error making GET request to api-v3.mbta.com: %s", err)
 	}
 
 	defer resp.Body.Close()

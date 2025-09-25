@@ -30,6 +30,13 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 	io.Writer.Write(w, str)
 }
 
+func getHistoricalData(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Request-Method", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+}
+
 func healthcheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Request-Method", "*")
@@ -40,6 +47,7 @@ func healthcheck(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/v1/live", getLiveData)
+	http.HandleFunc("/v1/historical", getHistoricalData)
 	http.HandleFunc("/healthcheck", healthcheck)
 
 	go getTrainUpdates()
