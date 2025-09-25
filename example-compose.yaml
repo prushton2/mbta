@@ -1,0 +1,16 @@
+services:
+  backend:
+    build: backend
+    restart: always
+    volumes: 
+      - ./data:/app/backend/data
+
+  frontend:
+    build: 
+      context: frontend
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    restart: always
+
+    env_file:
+      - .env

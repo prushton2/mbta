@@ -1,4 +1,4 @@
 backend/data
 compose.yaml
 .env
-./backend/mbta
+backend/mbta
