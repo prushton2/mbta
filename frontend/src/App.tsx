@@ -4,22 +4,24 @@ import L from 'leaflet';
 import 'leaflet-rotatedmarker';
 import arrowIconSVG from './assets/arrow.svg'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
-import { polyline, getLines, getColor, getColorFromLineName } from './Lines';
+import { polyline, getLines, getColor, getColorFromLineName } from './Lines.tsx';
 import { JSX, useEffect, useRef, useState } from 'react';
-import { getLatestTrainData } from './API';
-import { Snapshot } from './models/GenericModels';
+import { getHistoricalTrainData, getLatestTrainData } from './API';
+import { Snapshot, Timeframe } from './models/GenericModels';
 import TimeSlider from './components/TimeSlider';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
 
 export function App() {
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
-  const [slider, setSlider] = useState<number>(1440);
-  // const [autoplaySpeed, setAutoplaySpeed] = useState<number>(0);
-  // const [sliderMax, setSliderMax] = useState<number>(1440);
-  const [displayedTrainInfo, setDisplayedTrainInfo] = useState<Snapshot | null>(null);
-  const [persistTrains, setPersistTrains] = useState<boolean>(false);
+  const historicalTrainInfo = useRef<Timeframe>({ snapshots: [] } as Timeframe)
+  const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
+  // const displayedTrainInfo = useRef<Snapshot>({trains: []} as Snapshot)
 
+  const [slider, setSlider] = useState<number>(0);
+  const [manualRerender, setManualRerender] = useState<boolean>(false);
+  // const [displayedTrainInfo, setDisplayedTrainInfo] = useState<Snapshot | null>(null); // the "source of truth" for what trains to display
+  // const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
   let icon: L.Icon = L.icon({
     iconUrl: arrowIconSVG,
@@ -40,12 +42,18 @@ export function App() {
 
   function renderTrains(): JSX.Element[] {
     let source: Snapshot = { trains: [] } as Snapshot
-    if (slider == 1440 && displayedTrainInfo != null) {
-      source = displayedTrainInfo
+    if (slider == 0) {
+      source = liveTrainInfo.current
     } else {
-      // historical data mode
+      let localTime = Math.floor(new Date().getTime() / 1000);
+      localTime = localTime - (localTime % 60); // align to minute
+      let historicalData = historicalTrainInfo.current.snapshots[localTime - (slider * 60)]
+      if (historicalData != undefined) {
+        source = historicalData
+      }
     }
 
+    // update the marker refs so we can automaticall change train data
     source.trains.forEach((e) => {
       const setRef = (instance: L.Marker | null) => {
         if (instance) {
@@ -55,8 +63,9 @@ export function App() {
         }
       };
 
+      // return marker html
       markerMap.set(e.attributes.label,
-        //@ts-ignore
+        // @ts-ignore
         <Marker key={e.attributes.label} icon={icon} position={[e.attributes.latitude, e.attributes.longitude]} rotationAngle={270 + e.attributes.bearing} rotationOrigin="center" ref={setRef}>
           <Popup>
             <h2>{e.attributes.label} ({e.car.brand}{e.car.type !== 0 ? ` Type ${e.car.type}` : ""})</h2>
@@ -69,37 +78,35 @@ export function App() {
       );
     });
 
+    source.trains.forEach(e => {
+      let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
+      if (markerInstance != undefined) {
+        //@ts-ignore
+        markerInstance.setRotationAngle(e.attributes.bearing + 270);
+        markerInstance.setLatLng([e.attributes.latitude, e.attributes.longitude]);
+      }
+    })
+
     return [...markerMap.values()];
   }
 
   useEffect(() => {
     async function run() {
       let data = await getLatestTrainData()
-      setDisplayedTrainInfo(data);
+      liveTrainInfo.current = data;
+      setManualRerender((manualRerender) => !manualRerender)
     }
 
     run()
 
     const interval = setInterval(() => {
-      run();
+      if (slider == 0) {
+        run();
+      }
     }, 10000);
 
     return () => clearInterval(interval);
   }, [])
-
-  useEffect(() => {
-    if (displayedTrainInfo != null) {
-      displayedTrainInfo.trains.forEach((e) => {
-        let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
-
-        if (markerInstance != undefined) {
-          //@ts-ignore
-          markerInstance.setRotationAngle(e.attributes.bearing + 270);
-          markerInstance.setLatLng([e.attributes.latitude, e.attributes.longitude]);
-        }
-      })
-    }
-  }, [displayedTrainInfo])
 
   return <>
     <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100%", backgroundColor: "black" }}>
@@ -107,7 +114,12 @@ export function App() {
       {renderLines()}
       {renderTrains()}
     </MapContainer>
-    <TimeSlider />
+    <TimeSlider update={async (time, canFetchAPI) => {
+      setSlider(time) /* get the necessary historical data if able */
+      if (canFetchAPI) {
+        historicalTrainInfo.current = await getHistoricalTrainData(time * 60)
+      }
+    }} />
   </>
 }
 

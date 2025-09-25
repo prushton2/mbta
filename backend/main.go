@@ -82,6 +82,7 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 		timeframe.Snapshots[timeRecorded] = snapshot
 	}
 
+	// something needs to happen here, this gives a shit ton of data (bad)
 	bytes, err := json.Marshal(timeframe)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

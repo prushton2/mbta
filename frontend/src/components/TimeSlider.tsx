@@ -1,9 +1,9 @@
 import "./TimeSlider.css"
-import { JSX, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 
-function TimeSlider({updateOffset}: {updateOffset: (time: number) => null}): JSX.Element {
+function TimeSlider({update}: {update: (time: number, canFetchAPI: boolean) => void}): JSX.Element {
     const [offset, setOffset] = useState(0)
-    let localTime = new Date()
+    let timeout = useRef<number>(0);
 
     function convertTimestampToDate(timestamp: number): String {
         const date = new Date(timestamp);
@@ -15,12 +15,19 @@ function TimeSlider({updateOffset}: {updateOffset: (time: number) => null}): JSX
         });
     }
 
+    useEffect(() => {
+        clearTimeout(timeout.current)
+        timeout.current = setTimeout(() => {
+            update(offset, true)
+        }, 1000)
+    }, [offset])
+
     return <>
         <table style={{ width: "100%" }}>
             <tr>
                 <td style={{ width: "90%" }}>
                     <div className="slidecontainer" style={{ height: "5vh" }}>
-                        <input type="range" min="0" value={offset} max={86400} className="slider" onChange={(e) => {setOffset(e.target.valueAsNumber); updateOffset(e.target.valueAsNumber)}} />
+                        <input type="range" min="0" value={offset} max={1440} className="slider" onChange={(e) => {setOffset(e.target.valueAsNumber); update(e.target.valueAsNumber, false)}} />
                     </div>
                 </td>
                 <td style={{ width: "10%", textAlign: "center"}}>
