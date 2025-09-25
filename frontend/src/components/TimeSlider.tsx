@@ -6,6 +6,12 @@ function TimeSlider({update}: {update: (time: number, canFetchAPI: boolean) => v
     let timeout = useRef<number>(0);
 
     function convertTimestampToDate(timestamp: number): String {
+        if (offset == 0) {
+            timestamp = timestamp - timestamp % (1000*10)
+        } else {
+            timestamp = timestamp - timestamp % (1000*60)
+        }
+
         const date = new Date(timestamp);
         return date.toLocaleString('en-US', {
             hour: '2-digit',
@@ -31,7 +37,7 @@ function TimeSlider({update}: {update: (time: number, canFetchAPI: boolean) => v
                     </div>
                 </td>
                 <td style={{ width: "10%", textAlign: "center"}}>
-                    {convertTimestampToDate((new Date()).getTime() - offset*1000)}
+                    {convertTimestampToDate((new Date()).getTime() - offset*1000*60)}
                 </td>
             </tr>
         </table>
