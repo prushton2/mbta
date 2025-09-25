@@ -14,13 +14,11 @@ let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
 
 export function App() {
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
-  const historicalTrainInfo = useRef<Timeframe>({ snapshots: [] } as Timeframe)
+  const historicalTrainInfo = useRef<Timeframe>({ snapshots: new Map<number, Snapshot>() } as Timeframe)
   const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
-  // const displayedTrainInfo = useRef<Snapshot>({trains: []} as Snapshot)
 
   const [slider, setSlider] = useState<number>(0);
-  const [_manualRerender, setManualRerender] = useState<boolean>(false);
-  // const [displayedTrainInfo, setDisplayedTrainInfo] = useState<Snapshot | null>(null); // the "source of truth" for what trains to display
+  const [manualRerender, setManualRerender] = useState<boolean>(false);
   // const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
   let icon: L.Icon = L.icon({
@@ -40,23 +38,19 @@ export function App() {
     return element;
   }
 
-  function renderTrains(): JSX.Element[] {
+  function renderTrains(_bool: boolean): JSX.Element[] {
     let source: Snapshot = { trains: [] } as Snapshot
     if (slider == 0) {
       source = liveTrainInfo.current
     } else {
       let localTime = Math.floor(new Date().getTime() / 1000);
       localTime = localTime - (localTime % 60); // align to minute
-      console.log(historicalTrainInfo.current.snapshots)
-      try {
-        let historicalData = historicalTrainInfo.current.snapshots.get(localTime - (slider * 60))
-        if (historicalData != undefined) {
-          source = historicalData
-        } else {
-          console.log("Historical data is undefined at time ", localTime - (slider * 60))
-        }
-      } catch(e) {
-        console.log(e)
+      let historicalData = historicalTrainInfo.current.snapshots.get(localTime - (slider * 60))
+
+      if (historicalData != undefined) {
+        source = historicalData
+      } else {
+        console.log("Historical data is undefined at time ", localTime - (slider * 60))
       }
     }
 
@@ -119,7 +113,7 @@ export function App() {
     <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100%", backgroundColor: "black" }}>
       <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
       {renderLines()}
-      {renderTrains()}
+      {renderTrains(manualRerender)}
     </MapContainer>
     <TimeSlider update={async (time, canFetchAPI) => {
       setSlider(time) /* get the necessary historical data if able */
