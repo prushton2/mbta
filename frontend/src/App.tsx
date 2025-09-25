@@ -38,7 +38,7 @@ export function App() {
     return element;
   }
 
-  function renderTrains(_bool: boolean): JSX.Element[] {
+  function renderTrains(): JSX.Element[] {
     let source: Snapshot = { trains: [] } as Snapshot
     if (slider == 0) {
       source = liveTrainInfo.current
@@ -70,7 +70,7 @@ export function App() {
         <Marker key={e.attributes.label} icon={icon} position={[e.attributes.latitude, e.attributes.longitude]} rotationAngle={270 + e.attributes.bearing} rotationOrigin="center" ref={setRef}>
           <Popup>
             <h2>{e.attributes.label} ({e.car.brand}{e.car.type !== 0 ? ` Type ${e.car.type}` : ""})</h2>
-            <p>Speed: {e.attributes.speed || 0.0}</p>
+            <p>Speed: {e.attributes.speed || 0.0}mph</p>
             <p>Headsign: {e.trip.headsign}</p>
             <p>Bearing: {e.attributes.bearing}</p>
           </Popup>
@@ -113,13 +113,14 @@ export function App() {
     <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100%", backgroundColor: "black" }}>
       <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
       {renderLines()}
-      {renderTrains(manualRerender)}
+      {renderTrains()}
     </MapContainer>
     <TimeSlider update={async (time, canFetchAPI) => {
-      setSlider(time) /* get the necessary historical data if able */
+      /* get the necessary historical data if able */
+      setSlider(time);
       if (canFetchAPI) {
-        historicalTrainInfo.current = await getHistoricalTrainData(time * 60)
-        setManualRerender(manualRerender => !manualRerender)
+        historicalTrainInfo.current = await getHistoricalTrainData((time * 60)+60);
+        setManualRerender(manualRerender => !manualRerender);
       }
     }} />
   </>
