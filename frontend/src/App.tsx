@@ -19,7 +19,7 @@ export function App() {
   // const displayedTrainInfo = useRef<Snapshot>({trains: []} as Snapshot)
 
   const [slider, setSlider] = useState<number>(0);
-  const [manualRerender, setManualRerender] = useState<boolean>(false);
+  const [_manualRerender, setManualRerender] = useState<boolean>(false);
   // const [displayedTrainInfo, setDisplayedTrainInfo] = useState<Snapshot | null>(null); // the "source of truth" for what trains to display
   // const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
@@ -47,9 +47,16 @@ export function App() {
     } else {
       let localTime = Math.floor(new Date().getTime() / 1000);
       localTime = localTime - (localTime % 60); // align to minute
-      let historicalData = historicalTrainInfo.current.snapshots[localTime - (slider * 60)]
-      if (historicalData != undefined) {
-        source = historicalData
+      console.log(historicalTrainInfo.current.snapshots)
+      try {
+        let historicalData = historicalTrainInfo.current.snapshots.get(localTime - (slider * 60))
+        if (historicalData != undefined) {
+          source = historicalData
+        } else {
+          console.log("Historical data is undefined at time ", localTime - (slider * 60))
+        }
+      } catch(e) {
+        console.log(e)
       }
     }
 
@@ -118,6 +125,7 @@ export function App() {
       setSlider(time) /* get the necessary historical data if able */
       if (canFetchAPI) {
         historicalTrainInfo.current = await getHistoricalTrainData(time * 60)
+        setManualRerender(manualRerender => !manualRerender)
       }
     }} />
   </>

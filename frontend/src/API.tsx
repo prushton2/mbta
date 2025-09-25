@@ -11,5 +11,13 @@ export async function getLatestTrainData(): Promise<Snapshot> {
 export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
     let response = await axios.get(`http://localhost:3000/v1/historical?t=${time}`)
     let obj = response.data;
-    return obj as Timeframe;
+
+    let timeframe: Timeframe = {snapshots: new Map<number, Snapshot>() } as Timeframe;
+    let entries = Object.entries(obj.snapshots)
+
+    entries.forEach(([key, value]) => {
+        timeframe.snapshots.set(parseInt(key), value as Snapshot)
+    })
+
+    return timeframe
 }

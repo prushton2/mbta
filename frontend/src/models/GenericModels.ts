@@ -5,5 +5,5 @@ export interface Snapshot {
 }
 
 export interface Timeframe {
-    snapshots: Record<number, Snapshot>;
+    snapshots: Map<number, Snapshot>;
 }
