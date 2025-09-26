@@ -1,11 +1,19 @@
 
 import axios from 'axios';
 import { Snapshot, Timeframe } from './models/GenericModels';
+import brotliPromise from 'brotli-wasm'; // Import the default export
 
 export async function getLatestTrainData(): Promise<Snapshot> {
     let response = await axios.get(`${import.meta.env.VITE_APP_BACKEND_URL}/v1/live`)
-    let obj = response.data;
-    return obj as Snapshot;
+    const brotli = await brotliPromise; // Import is async in browsers due to wasm requirements!
+    const textDecoder = new TextDecoder();
+
+    let obj = brotli.decompress(response.data);
+    console.log(textDecoder.decode(obj))
+
+    // return obj as Snapshot;
+
+    return {} as Snapshot;
 }
 
 export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
@@ -21,3 +29,4 @@ export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
 
     return timeframe
 }
+

@@ -62,6 +62,8 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf(" --- Compression Stats --- \nUncompressed Size: %d\n  Compressed Size: %d (%v%%)\n", len(str), len(compressed), 100-len(compressed)*100/len(str))
+
 	io.Writer.Write(w, compressed)
 }
 
