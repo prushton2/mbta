@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,11 +13,34 @@ import (
 	"sync"
 	"time"
 
+	brotli "github.com/andybalholm/brotli"
 	"prushton.com/mbta/types"
 )
 
 var snapshotMutex sync.RWMutex
 var snapshot types.Snapshot = types.Snapshot{}
+
+func compress(data []byte) ([]byte, error) {
+	var compressed bytes.Buffer
+
+	writer := brotli.NewWriter(&compressed)
+
+	_, err := writer.Write(data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	writer.Close()
+
+	b, err := io.ReadAll(&compressed)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
 
 func getLiveData(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -32,7 +56,13 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	io.Writer.Write(w, str)
+	compressed, err := compress(str)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error compressing data: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	io.Writer.Write(w, compressed)
 }
 
 func getHistoricalData(w http.ResponseWriter, r *http.Request) {
