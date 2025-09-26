@@ -56,18 +56,19 @@ export function App() {
 
     // update the marker refs so we can automaticall change train data
     source.trains.forEach((e) => {
+      let uid = `${e.trip.line}-${e.attributes.label}`
       const setRef = (instance: L.Marker | null) => {
         if (instance) {
-          trainMarkerRefs.current.set(e.attributes.label, instance);
+          trainMarkerRefs.current.set(uid, instance);
         } else {
-          trainMarkerRefs.current.delete(e.attributes.label);
+          trainMarkerRefs.current.delete(uid);
         }
       };
 
       // return marker html
-      markerMap.set(e.attributes.label,
+      markerMap.set(uid,
         // @ts-ignore
-        <Marker key={e.attributes.label} icon={icon} position={[e.attributes.latitude, e.attributes.longitude]} rotationAngle={270 + e.attributes.bearing} rotationOrigin="center" ref={setRef}>
+        <Marker key={uid} icon={icon} position={[e.attributes.latitude, e.attributes.longitude]} rotationAngle={270 + e.attributes.bearing} rotationOrigin="center" ref={setRef}>
           <Popup>
             <h2>{e.attributes.label} ({e.car.brand}{e.car.type !== 0 ? ` Type ${e.car.type}` : ""})</h2>
             <p>Speed: {e.attributes.speed || 0.0}mph</p>
@@ -80,7 +81,9 @@ export function App() {
     });
 
     source.trains.forEach(e => {
-      let markerInstance = trainMarkerRefs.current.get(e.attributes.label);
+      let uid = `${e.trip.line}-${e.attributes.label}`
+      
+      let markerInstance = trainMarkerRefs.current.get(uid);
       if (markerInstance != undefined) {
         //@ts-ignore
         markerInstance.setRotationAngle(e.attributes.bearing + 270);
