@@ -1,10 +1,7 @@
-FROM alpine:latest
+FROM golang:1.25.1-alpine
 
 WORKDIR /app
 COPY . /app
-
-RUN apk add go
-RUN apk add gcc
 
 RUN go build .
 
