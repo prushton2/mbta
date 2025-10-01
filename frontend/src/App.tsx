@@ -96,7 +96,7 @@ export function App() {
 
   useEffect(() => {
     async function fetchLiveTrainData() {
-      return
+      // return
       let data = await getLatestTrainData()
       liveTrainInfo.current = data;
 

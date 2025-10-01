@@ -1,0 +1,13 @@
+diff --git a/node_modules/brotli-wasm/pkg.web/brotli_wasm.js b/node_modules/brotli-wasm/pkg.web/brotli_wasm.js
+index 1e84313..67e1d2d 100644
+--- a/node_modules/brotli-wasm/pkg.web/brotli_wasm.js
++++ b/node_modules/brotli-wasm/pkg.web/brotli_wasm.js
+@@ -427,7 +427,7 @@ async function load(module, imports) {
+ 
+ async function init(input) {
+     if (typeof input === 'undefined') {
+-        input = new URL('brotli_wasm_bg.wasm', import.meta.url);
++        input = new URL('/wasm/brotli_wasm_bg.wasm', `${import.meta.url.split("/")[0]}//${import.meta.url.split("/")[2]}`);
+     }
+     const imports = {};
+     imports.wbg = {};

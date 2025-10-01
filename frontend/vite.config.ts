@@ -10,16 +10,5 @@ export default defineConfig({
     wasm(),
     topLevelAwait()
   ],
-  build: {
-    // Allows the use of top-level await in the final output
-    target: 'esnext'
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      // Allows top-level await in dependencies during dev server pre-bundling
-      supported: {
-        'top-level-await': true
-      },
-    }
-  }
+  assetsInclude: ["**/*.wasm"],
 })

@@ -1,19 +1,30 @@
 
 import axios from 'axios';
 import { Snapshot, Timeframe } from './models/GenericModels';
+// import { decompress } from 'brotli-compress';
 import brotliPromise from 'brotli-wasm'; // Import the default export
+// import brotliPromise from 'brotli-wasm'; // Import the default export
 
 export async function getLatestTrainData(): Promise<Snapshot> {
-    let response = await axios.get(`${import.meta.env.VITE_APP_BACKEND_URL}/v1/live`)
+    const response = await axios.get(`${import.meta.env.VITE_APP_BACKEND_URL}/v1/live`, {
+        responseType: 'arraybuffer'
+    });
+    const dataBuffer = new Uint8Array(response.data as ArrayBuffer);
+
+    console.log('Raw response data:', dataBuffer);
+    
     const brotli = await brotliPromise; // Import is async in browsers due to wasm requirements!
-    const textDecoder = new TextDecoder();
+    // Decompress the Brotli-compressed data
+    const decompressedData = brotli.decompress(dataBuffer);
 
-    let obj = brotli.decompress(response.data);
-    console.log(textDecoder.decode(obj))
+    // Convert the decompressed data to a string and parse as JSON
+    const jsonString = new TextDecoder().decode(decompressedData);
+    // const snapshot: Snapshot = JSON.parse(jsonString);
+    console.log('Decompressed data:', jsonString);
 
-    // return obj as Snapshot;
+    console.log(import.meta.url);
 
-    return {} as Snapshot;
+    return JSON.parse(jsonString) as Snapshot;
 }
 
 export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
@@ -21,7 +32,7 @@ export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
     let obj = response.data;
 
     let timeframe: Timeframe = {snapshots: new Map<number, Snapshot>() } as Timeframe;
-    let entries = Object.entries(obj.snapshots)
+    let entries = Object.entries(obj.snapshots) 
 
     entries.forEach(([key, value]) => {
         timeframe.snapshots.set(parseInt(key), value as Snapshot)
@@ -29,4 +40,3 @@ export async function getHistoricalTrainData(time: number): Promise<Timeframe> {
 
     return timeframe
 }
-
