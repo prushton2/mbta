@@ -49,9 +49,10 @@ export function App() {
 
       if (historicalData != undefined) {
         source = historicalData
-      } else {
-        console.log("Historical data is undefined at time ", localTime - (slider * 60))
       }
+      // else {
+      //   console.log("Historical data is undefined at time ", localTime - (slider * 60))
+      // }
     }
 
     // update the marker refs so we can automaticall change train data
