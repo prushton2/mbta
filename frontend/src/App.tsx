@@ -16,10 +16,10 @@ export function App() {
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
   const historicalTrainInfo = useRef<Timeframe>({ snapshots: new Map<number, Snapshot>() } as Timeframe)
   const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
+  const isLoading = useRef<boolean>(false);
 
   const [slider, setSlider] = useState<number>(0);
   const [_manualRerender, setManualRerender] = useState<boolean>(false);
-  // const [persistTrains, setPersistTrains] = useState<boolean>(false);
 
   let icon: L.Icon = L.icon({
     iconUrl: arrowIconSVG,
@@ -49,10 +49,12 @@ export function App() {
 
       if (historicalData != undefined) {
         source = historicalData
+        isLoading.current = false;
       }
-      // else {
-      //   console.log("Historical data is undefined at time ", localTime - (slider * 60))
-      // }
+      else {
+        // console.log("Historical data is undefined at time ", localTime - (slider * 60))
+        isLoading.current = true;
+      }
     }
 
     // update the marker refs so we can automaticall change train data
@@ -132,7 +134,7 @@ export function App() {
       {renderLines()}
       {renderTrains()}
     </MapContainer>
-    <TimeSlider update={async (time, canFetchAPI) => {
+    <TimeSlider isLoading={isLoading.current} update={async (time, canFetchAPI) => {
       /* get the necessary historical data if able */
       setSlider(time);
 
@@ -147,6 +149,7 @@ export function App() {
         // the historical train info
         if (historicalData == undefined) {
           historicalTrainInfo.current = await getHistoricalTrainData((time * 60)+60);
+          isLoading.current = false;
         }
         setManualRerender(manualRerender => !manualRerender);
       }

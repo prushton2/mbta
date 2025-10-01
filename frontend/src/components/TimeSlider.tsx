@@ -1,7 +1,7 @@
 import "./TimeSlider.css"
 import { JSX, useEffect, useRef, useState } from "react";
 
-function TimeSlider({update}: {update: (time: number, canFetchAPI: boolean) => void}): JSX.Element {
+function TimeSlider({isLoading, update}: {isLoading: boolean, update: (time: number, canFetchAPI: boolean) => void}): JSX.Element {
     const [offset, setOffset] = useState(0)
     let timeout = useRef<number>(0);
 
@@ -37,7 +37,8 @@ function TimeSlider({update}: {update: (time: number, canFetchAPI: boolean) => v
                     </div>
                 </td>
                 <td style={{ width: "10%", textAlign: "center"}}>
-                    {convertTimestampToDate((new Date()).getTime() - offset*1000*60)}
+                    {convertTimestampToDate((new Date()).getTime() - offset*1000*60)} <br />
+                    {isLoading ? " Loading..." : " "}
                 </td>
             </tr>
         </table>
