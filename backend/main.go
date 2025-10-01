@@ -62,7 +62,7 @@ func getLiveData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf(" --- Compression Stats --- \nUncompressed Size: %d\n  Compressed Size: %d (%v%%)\n", len(str), len(compressed), 100-len(compressed)*100/len(str))
+	// fmt.Printf(" --- Compression Stats --- \nUncompressed Size: %d\n  Compressed Size: %d (%v%%)\n", len(str), len(compressed), 100-len(compressed)*100/len(str))
 
 	io.Writer.Write(w, compressed)
 }
@@ -121,7 +121,13 @@ func getHistoricalData(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "Error marshaling data")
 	}
 
-	io.Writer.Write(w, bytes)
+	compressed, err := compress(bytes)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error compressing data: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	io.Writer.Write(w, compressed)
 }
 
 func healthcheck(w http.ResponseWriter, r *http.Request) {
