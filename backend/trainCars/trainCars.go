@@ -57,6 +57,16 @@ var VehicleInfo map[string][]types.VehicleTypeInfo = map[string][]types.VehicleT
 		{StartID: 1800, EndID: 1885, Type: 3, Model: "Bombardier"},
 		{StartID: 1900, EndID: 2151, Type: 4, Model: "CRRC"},
 	},
+	"Mattapan": {
+		{StartID: 3072, EndID: 3096, Type: 0, Model: "PCC Pullman Standard"},
+		{StartID: 3222, EndID: 3271, Type: 0, Model: "PCC Pullman Standard"},
+
+		{StartID: 3234, EndID: 3234, Type: 0, Model: "PCC Pullman Standard"},
+		{StartID: 3238, EndID: 3238, Type: 0, Model: "PCC Pullman Standard"},
+		{StartID: 3254, EndID: 3254, Type: 0, Model: "PCC Pullman Standard"},
+		{StartID: 3260, EndID: 3260, Type: 0, Model: "PCC Pullman Standard"},
+		{StartID: 3265, EndID: 3265, Type: 0, Model: "PCC Pullman Standard"},
+	},
 }
 
 func GetCarAndType(fullLine string, labelstring string) (int32, string) {
