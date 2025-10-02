@@ -57,6 +57,8 @@ export function App() {
       }
     }
 
+    markerMap.clear();
+
     // update the marker refs so we can automaticall change train data
     source.trains.forEach((e) => {
       let uid = `${e.trip.line}-${e.attributes.label}`
