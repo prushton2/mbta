@@ -9,14 +9,28 @@ import { JSX, useEffect, useRef, useState } from 'react';
 import { getHistoricalTrainData, getLatestTrainData } from './API';
 import { Snapshot, Timeframe } from './models/GenericModels';
 import TimeSlider from './components/TimeSlider';
+import { Config } from './models/Config.ts';
+import { SettingsMenu, settingsMenuController } from './components/SettingsMenu.tsx';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
+const defaultSettings: Config = {
+  persistOutOfServiceTrains: false,
+  show: {
+    RedLine: true,
+    GreenLine: true,
+    BlueLine: true,
+    OrangeLine: true,
+    CommuterRail: true
+  }
+} as Config
 
 export function App() {
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
   const historicalTrainInfo = useRef<Timeframe>({ snapshots: new Map<number, Snapshot>() } as Timeframe)
   const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
   const isLoading = useRef<boolean>(false);
+  const settings = useRef<Config>(defaultSettings)
+
 
   const [slider, setSlider] = useState<number>(0);
   const [_manualRerender, setManualRerender] = useState<boolean>(false);
@@ -131,7 +145,8 @@ export function App() {
   }, [])
 
   return <>
-    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100%", backgroundColor: "black" }}>
+    <SettingsMenu />
+    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", width: "100vw", backgroundColor: "black" }}>
       <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
       {renderLines()}
       {renderTrains()}
@@ -139,12 +154,12 @@ export function App() {
     <TimeSlider isLoading={isLoading.current} update={async (time, canFetchAPI) => {
       /* get the necessary historical data if able */
       setSlider(time);
-
+      
       if (canFetchAPI) {
         let localTime = Math.floor(new Date().getTime() / 1000);
         localTime = localTime - (localTime % 60); // align to minute
         let historicalData = historicalTrainInfo.current.snapshots.get(localTime - (slider * 60))
-
+        
         // This prevents refetching of known data. Assuming good health on the backend, historicalData being undefined means we havent gone back that far yet, so we need to fetch
         // This creates a gap. When you first get historical data, its can be visualized as [ historical data ][now]. As time progresses, a gap forms between the data and now
         // [ historical data ][ unfetched data ][now]. This happens because no new api calls are made to fill the gap. This is solved by filling live train info into 
@@ -156,6 +171,7 @@ export function App() {
         setManualRerender(manualRerender => !manualRerender);
       }
     }} />
+    <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px"}} onClick={() => settingsMenuController.show()}>Settings</button>
   </>
 }
 
