@@ -26,3 +26,10 @@
   --blue: hsl(250, 28%, 20%);
   --blue-dark: hsl(250, 27%, 15%);
 }
+
+button {
+  background-color: var(--bg);
+  border: 2px solid var(--bg-light);
+  border-radius: 3px;
+}
+

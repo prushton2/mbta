@@ -172,7 +172,7 @@ export function App() {
         setManualRerender(manualRerender => !manualRerender);
       }
     }} />
-    <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px"}} onClick={async() => {settings.current = await settingsMenuController.show(); console.log(settings.current); setManualRerender(m => !m)}}>Settings</button>
+    <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px", fontSize: "2rem"}} onClick={async() => {settings.current = await settingsMenuController.show(); console.log(settings.current); setManualRerender(m => !m)}}>⚙</button>
   </>
 }
 

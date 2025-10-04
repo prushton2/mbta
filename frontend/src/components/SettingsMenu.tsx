@@ -23,9 +23,12 @@ export function SettingsMenu(): JSX.Element {
 
     const resolveRef = useRef<((res: Config) => void) | null>(null);
     const settings = useRef<Config>(defaultSettings)
+    const settings_old= useRef<Config>(defaultSettings)
+
 
     const internalShowPrompt = useCallback((): Promise<Config> => {
         setVisible(true)
+        settings_old.current = JSON.parse(JSON.stringify(settings.current))
         return new Promise((resolve) => {
             resolveRef.current = resolve; // Store the resolve function
         });
@@ -39,6 +42,7 @@ export function SettingsMenu(): JSX.Element {
     }, [internalShowPrompt])
 
     function handleButton(v: Config) {
+        settings.current = JSON.parse(JSON.stringify(v))
         if (resolveRef.current) {
             resolveRef.current(v)
             resolveRef.current = null
@@ -108,6 +112,10 @@ export function SettingsMenu(): JSX.Element {
                     {renderOptions()}
                 </div>
                 <div className="modal-buttons">
+                    <button
+                        className="modal-button"
+                        onClick={() => handleButton(settings_old.current)}
+                    >Cancel</button>
                     <button
                         className="modal-button"
                         onClick={() => handleButton(settings.current)}
