@@ -147,6 +147,11 @@ export function App() {
 
   return <>
     <SettingsMenu />
+    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", backgroundColor: "black" }}>
+      <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
+      {renderLines()}
+      {renderTrains()}
+    </MapContainer>
     <TimeSlider isLoading={isLoading.current} update={async (time, canFetchAPI) => {
       /* get the necessary historical data if able */
       setSlider(time);
@@ -167,11 +172,6 @@ export function App() {
         setManualRerender(manualRerender => !manualRerender);
       }
     }} />
-    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ margin: "0px", height: "90vh", backgroundColor: "black" }}>
-      <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
-      {renderLines()}
-      {renderTrains()}
-    </MapContainer>
     <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px", fontSize: "2rem"}} onClick={async() => {settings.current = await settingsMenuController.show(); console.log(settings.current); setManualRerender(m => !m)}}>⚙</button>
   </>
 }
