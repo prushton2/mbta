@@ -10,3 +10,14 @@ export interface ShowLayers {
     BlueLine: boolean,
     CommuterRail: boolean,
 }
+
+export const defaultSettings: Config = {
+  persistOutOfServiceTrains: false,
+  show: {
+    RedLine: true,
+    GreenLine: true,
+    BlueLine: true,
+    OrangeLine: true,
+    CommuterRail: true
+  }
+} as Config

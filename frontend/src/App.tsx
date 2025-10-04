@@ -9,20 +9,10 @@ import { JSX, useEffect, useRef, useState } from 'react';
 import { getHistoricalTrainData, getLatestTrainData } from './API';
 import { Snapshot, Timeframe } from './models/GenericModels';
 import TimeSlider from './components/TimeSlider';
-import { Config } from './models/Config.ts';
+import { Config, defaultSettings } from './models/Config.ts';
 import { SettingsMenu, settingsMenuController } from './components/SettingsMenu.tsx';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
-const defaultSettings: Config = {
-  persistOutOfServiceTrains: false,
-  show: {
-    RedLine: true,
-    GreenLine: true,
-    BlueLine: true,
-    OrangeLine: true,
-    CommuterRail: true
-  }
-} as Config
 
 export function App() {
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
@@ -71,10 +61,21 @@ export function App() {
       }
     }
 
-    markerMap.clear();
+    if(!settings.current.persistOutOfServiceTrains) {
+      markerMap.clear();
+    }
 
     // update the marker refs so we can automaticall change train data
     source.trains.forEach((e) => {
+      if(
+        e.trip.line.startsWith("Green") && !settings.current.show.GreenLine ||
+        (e.trip.line.startsWith("Red") || e.trip.line.startsWith("Mattapan")) && !settings.current.show.RedLine ||
+        e.trip.line.startsWith("Blue") && !settings.current.show.BlueLine ||
+        e.trip.line.startsWith("Orange") && !settings.current.show.OrangeLine ||
+        e.trip.line.startsWith("CR") && !settings.current.show.CommuterRail) {
+        return
+      }
+
       let uid = `${e.trip.line}-${e.attributes.label}`
       const setRef = (instance: L.Marker | null) => {
         if (instance) {
@@ -171,7 +172,7 @@ export function App() {
         setManualRerender(manualRerender => !manualRerender);
       }
     }} />
-    <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px"}} onClick={() => settingsMenuController.show()}>Settings</button>
+    <button style={{zIndex: 100000000000, position: 'absolute', top: "10px", right: "10px"}} onClick={async() => {settings.current = await settingsMenuController.show(); console.log(settings.current); setManualRerender(m => !m)}}>Settings</button>
   </>
 }
 
