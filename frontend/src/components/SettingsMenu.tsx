@@ -51,7 +51,7 @@ export function SettingsMenu(): JSX.Element {
     }
 
     function renderOptions() {
-        return <table>
+        return <table><tbody>
         <tr> 
             <td> Persist out of service trains </td> 
             <td> <input type={"checkbox"} 
@@ -97,7 +97,7 @@ export function SettingsMenu(): JSX.Element {
                 defaultChecked={settings.current.show.CommuterRail}/>
             </td>
         </tr>
-    </table>
+    </tbody></table>
     }
 
     return (

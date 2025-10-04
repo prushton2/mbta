@@ -29,7 +29,7 @@ function TimeSlider({isLoading, update}: {isLoading: boolean, update: (time: num
     }, [offset])
 
     return <>
-        <table style={{ width: "100%" }}>
+        <table style={{ width: "100%" }}><tbody>
             <tr>
                 <td style={{ width: "90%" }}>
                     <div className="slidecontainer" style={{ height: "5vh" }}>
@@ -41,7 +41,7 @@ function TimeSlider({isLoading, update}: {isLoading: boolean, update: (time: num
                     {isLoading ? " Loading..." : " "}
                 </td>
             </tr>
-        </table>
+        </tbody></table>
     </>
 }
 
