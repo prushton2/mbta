@@ -22,13 +22,12 @@ export function SettingsMenu(): JSX.Element {
     const [visible, setVisible] = useState<boolean>(false);
 
     const resolveRef = useRef<((res: Config) => void) | null>(null);
-    const settings = useRef<Config>(defaultSettings)
+    const [settings, setSettings] = useState<Config>(defaultSettings)
     const settings_old= useRef<Config>(defaultSettings)
-
 
     const internalShowPrompt = useCallback((): Promise<Config> => {
         setVisible(true)
-        settings_old.current = JSON.parse(JSON.stringify(settings.current))
+        settings_old.current = JSON.parse(JSON.stringify(settings))
         return new Promise((resolve) => {
             resolveRef.current = resolve; // Store the resolve function
         });
@@ -42,7 +41,7 @@ export function SettingsMenu(): JSX.Element {
     }, [internalShowPrompt])
 
     function handleButton(v: Config) {
-        settings.current = JSON.parse(JSON.stringify(v))
+        setSettings(JSON.parse(JSON.stringify(v)))
         if (resolveRef.current) {
             resolveRef.current(v)
             resolveRef.current = null
@@ -56,49 +55,49 @@ export function SettingsMenu(): JSX.Element {
 
     function renderOptions() {
         return <table><tbody>
-        <tr> 
+        <tr onClick={() => setSettings(prev => ({...prev, persistOutOfServiceTrains: !prev.persistOutOfServiceTrains}))}> 
             <td> Persist out of service trains </td> 
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.persistOutOfServiceTrains = !settings.current.persistOutOfServiceTrains}
-                defaultChecked={settings.current.persistOutOfServiceTrains}/><br /> 
+                onChange={(e) => setSettings(prev => ({...prev, persistOutOfServiceTrains: e.target.checked}))}
+                checked={settings.persistOutOfServiceTrains}/><br /> 
             </td> 
         </tr>
         <tr>
             <td> <b>Layers</b> </td>
         </tr>
-        <tr>
+        <tr onClick={() => setSettings(prev => ({...prev, show: {...prev.show, RedLine: !prev.show.RedLine}}))}>
             <td>Red Line</td>  
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.show.RedLine = !settings.current.show.RedLine}
-                defaultChecked={settings.current.show.RedLine}/>
+                onChange={(e) => setSettings(prev => ({...prev, show: { ...prev.show, RedLine: e.target.checked }}))}
+                checked={settings.show.RedLine}/>
             </td>
         </tr>
-        <tr>
+        <tr onClick={() => setSettings(prev => ({...prev, show: {...prev.show, GreenLine: !prev.show.GreenLine}}))}>
             <td>Green Line</td> 
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.show.GreenLine = !settings.current.show.GreenLine}
-                defaultChecked={settings.current.show.GreenLine}/>
+                onChange={(e) => setSettings(prev => ({...prev, show: { ...prev.show, RedLine: e.target.checked }}))}
+                checked={settings.show.GreenLine}/>
             </td>
         </tr>
-        <tr>
+        <tr onClick={() => setSettings(prev => ({...prev, show: {...prev.show, OrangeLine: !prev.show.OrangeLine}}))}>
             <td>Orange Line</td> 
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.show.OrangeLine = !settings.current.show.OrangeLine}
-                defaultChecked={settings.current.show.OrangeLine}/>
+                onChange={(e) => setSettings(prev => ({...prev, show: { ...prev.show, OrangeLine: e.target.checked }}))}
+                checked={settings.show.OrangeLine}/>
             </td>
         </tr>
-        <tr>
+        <tr onClick={() => setSettings(prev => ({...prev, show: {...prev.show, BlueLine: !prev.show.BlueLine}}))}>
             <td>Blue Line</td>  
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.show.BlueLine = !settings.current.show.BlueLine}
-                defaultChecked={settings.current.show.BlueLine}/>
+                onChange={(e) => setSettings(prev => ({...prev, show: { ...prev.show, BlueLine: e.target.checked }}))}
+                checked={settings.show.BlueLine}/>
             </td>
         </tr>
-        <tr>
+        <tr onClick={() => setSettings(prev => ({...prev, show: {...prev.show, CommuterRail: !prev.show.CommuterRail}}))}>
             <td>Commuter Rail</td> 
             <td> <input type={"checkbox"} 
-                onClick={() => settings.current.show.CommuterRail = !settings.current.show.CommuterRail}
-                defaultChecked={settings.current.show.CommuterRail}/>
+                onChange={(e) => setSettings(prev => ({...prev, show: { ...prev.show, CommuterRail: e.target.checked }}))}
+                checked={settings.show.CommuterRail}/>
             </td>
         </tr>
     </tbody></table>
@@ -118,7 +117,7 @@ export function SettingsMenu(): JSX.Element {
                     >Cancel</button>
                     <button
                         className="modal-button"
-                        onClick={() => handleButton(settings.current)}
+                        onClick={() => handleButton(settings)}
                     >Save</button>
                 </div>
             </div>

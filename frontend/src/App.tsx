@@ -21,7 +21,6 @@ export function App() {
   const isLoading = useRef<boolean>(false);
   const settings = useRef<Config>(defaultSettings)
 
-
   const [slider, setSlider] = useState<number>(0);
   const [_manualRerender, setManualRerender] = useState<boolean>(false);
 
@@ -56,7 +55,6 @@ export function App() {
         isLoading.current = false;
       }
       else {
-        // console.log("Historical data is undefined at time ", localTime - (slider * 60))
         isLoading.current = true;
       }
     }
