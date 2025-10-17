@@ -3,24 +3,65 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet';
 import 'leaflet-rotatedmarker';
 import arrowIconSVG from './assets/arrow.svg'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from 'react-leaflet';
-import { polyline, getLines, getColor, getColorFromLineName } from './Lines.tsx';
-import { JSX, useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from 'react-leaflet';
+import { polyline, getLines, getColor, getColorFromLineName } from './static/Lines.tsx';
+import { JSX, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { getHistoricalTrainData, getLatestTrainData } from './API';
 import { Snapshot, Timeframe } from './models/GenericModels';
 import TimeSlider from './components/TimeSlider';
 import { Config, defaultSettings } from './models/Config.ts';
 import { SettingsMenu, settingsMenuController } from './components/SettingsMenu.tsx';
+import { stops } from './static/Stations.tsx';
 
 let markerMap: Map<string, JSX.Element> = new Map<string, JSX.Element>();
 
+function renderStops(zoom: number): JSX.Element[] {
+  console.log(zoom)
+  let source = stops;
+  let jsx: JSX.Element[] = [];
+
+  source.data.forEach((e) => {
+    if (zoom < 12 && e.lines[0] != "CR") {
+      return
+    }
+
+    jsx.push(
+      <CircleMarker key={`${e.name}-${e.latitude}-${e.longitude}`} center={[e.latitude, e.longitude]} color={getColorFromLineName(e.lines[0])} fillColor={getColorFromLineName(e.lines[0])} fillOpacity={1} radius={5}>
+        <Popup>
+          <h2>{e.name} Station</h2>
+          <p>Serves {e.lines.join(", ")}</p>
+        </Popup>
+      </CircleMarker>
+    );
+  });
+
+  return jsx;
+}
+
+const MapStops = memo(function MapStopsComponent(): JSX.Element {
+  const map = useMap();
+  const [zoom, setZoom] = useState<number>(map.getZoom());
+
+  useEffect(() => {
+    const onZoom = () => setZoom(map.getZoom());
+    map.on('zoomend', onZoom);
+    return () => { map.off('zoomend', onZoom); };
+  }, [map]);
+
+  // only recompute stops when zoom changes
+  const stopsElements = useMemo(() => renderStops(zoom), [zoom]);
+
+  return <>{stopsElements}</>;
+});
+
 export function App() {
+  const mapRef = useRef<L.Map | null>(null);
   const trainMarkerRefs = useRef<Map<string, L.Marker>>(new Map());
   const historicalTrainInfo = useRef<Timeframe>({ snapshots: new Map<number, Snapshot>() } as Timeframe)
   const liveTrainInfo = useRef<Snapshot>({ trains: [] } as Snapshot)
   const isLoading = useRef<boolean>(false);
   const settings = useRef<Config>(defaultSettings)
-
+  
   const [slider, setSlider] = useState<number>(0);
   const [_manualRerender, setManualRerender] = useState<boolean>(false);
 
@@ -31,6 +72,8 @@ export function App() {
     popupAnchor: [0, -12.5]
   });
 
+  
+
   function renderLines(): JSX.Element[] {
     let element: JSX.Element[] = []
     getLines().forEach((e: string) => {
@@ -40,6 +83,7 @@ export function App() {
     })
     return element;
   }
+
 
   function renderTrains(): JSX.Element[] {
     let source: Snapshot = { trains: [] } as Snapshot
@@ -145,10 +189,11 @@ export function App() {
 
   return <>
     <SettingsMenu />
-    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", backgroundColor: "black" }}>
+    <MapContainer center={[42.36041830331139, -71.0580009624248]} zoom={13} style={{ height: "90vh", backgroundColor: "black" }} ref={mapRef}>
       <TileLayer url="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png" />
       {renderLines()}
       {renderTrains()}
+      <MapStops/>
     </MapContainer>
     <TimeSlider isLoading={isLoading.current} update={async (time, canFetchAPI) => {
       /* get the necessary historical data if able */

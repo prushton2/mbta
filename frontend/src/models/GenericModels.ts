@@ -1,3 +1,4 @@
+import { Stop } from "./Stop";
 import { Train } from "./TrainModels"
 
 export interface Snapshot {
@@ -6,4 +7,8 @@ export interface Snapshot {
 
 export interface Timeframe {
     snapshots: Map<number, Snapshot>;
+}
+
+export interface Stops {
+    data: Stop[]
 }
